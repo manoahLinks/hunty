@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import picture from "@/public/static-images/image1.png";
 import { Skeleton } from "@/components/ui/skeleton";
 import { submitAnswer, AnswerIncorrectError } from "@/lib/contracts/hunt";
+import { resolveImageSrc, GATEWAY_COUNT } from "@/lib/ipfs";
 
 export interface Hunt {
   id: string | number;
@@ -54,6 +55,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [imgGatewayIdx, setImgGatewayIdx] = useState(0);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isPending) return;
@@ -155,7 +157,18 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
           {hunt.description || "No description provided."}
         </p>
         {hunt.link || hunt.image ? (
-          <Image src={hunt.link || hunt.image || picture} alt="hunt" width={180} height={180} />
+          <Image
+            src={resolveImageSrc(hunt.link || hunt.image || "", imgGatewayIdx)}
+            alt="hunt"
+            width={180}
+            height={180}
+            onError={() => {
+              if (imgGatewayIdx < GATEWAY_COUNT - 1) {
+                setImgGatewayIdx((i) => i + 1)
+              }
+            }}
+            unoptimized
+          />
         ) : (
           <Image src={picture} alt="hunt" width={180} height={180} />
         )}

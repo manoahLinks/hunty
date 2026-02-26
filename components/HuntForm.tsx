@@ -8,6 +8,8 @@ import { ChangeEvent, useRef, useState } from "react"
 import { addClue } from "@/lib/contracts/hunt"
 import { saveClueLocally } from "@/lib/huntStore"
 import { withTransactionToast } from "@/lib/txToast"
+import { uploadToIPFS } from "@/lib/ipfs"
+import { toast } from "sonner"
 
 interface Hunt {
   id: number
@@ -48,13 +50,11 @@ export function HuntForm({ hunt, onUpdate, onRemove, huntId, onCluesSaved }: Hun
     setIsUploading(true)
 
     try {
-      // Here you would typically upload the file to your server
-      // For now, we'll create a local URL for the image
-      const imageUrl = URL.createObjectURL(file)
-      onUpdate('image', imageUrl)
+      const ipfsUri = await uploadToIPFS(file)
+      onUpdate('image', ipfsUri)
     } catch (error) {
-      console.error('Error uploading image:', error)
-      // Handle error (e.g., show error message to user)
+      console.error('Error uploading image to IPFS:', error)
+      toast.error(error instanceof Error ? error.message : 'Image upload failed')
     } finally {
       setIsUploading(false)
     }

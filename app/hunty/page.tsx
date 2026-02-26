@@ -165,9 +165,11 @@ export default function CreateGame() {
       const end_time = Math.floor(endMs / 1000)
 
       const description = hunts.map((h) => `${h.title}: ${h.description}`).join("\n")
+      // Use the first hunt's image CID (if uploaded to IPFS) as the game cover.
+      const coverImageCid = hunts[0]?.image?.startsWith("ipfs://") ? hunts[0].image : undefined
 
       await withTransactionToast(
-        () => createHunt("", gameName, description, start_time, end_time),
+        () => createHunt("", gameName, description, start_time, end_time, coverImageCid),
         {
           loading: "Confirming in Wallet...",
           submitted: "Transaction Submitted",

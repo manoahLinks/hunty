@@ -46,7 +46,9 @@ export async function createHunt(
   title: string,
   description: string,
   start_time: number,
-  end_time: number
+  end_time: number,
+  /** IPFS CID (or ipfs:// URI) for the hunt cover image, stored on-chain. */
+  imageCid?: string
 ): Promise<CreateHuntResult> {
   if (typeof window === "undefined") throw new Error("Browser environment required")
 
@@ -62,7 +64,15 @@ export async function createHunt(
   }
 
   // Prepare the payload and encode as string (manageData value must be string/buffer)
-  const payload = JSON.stringify({ action: "create_hunt", creator, title, description, start_time, end_time })
+  const payload = JSON.stringify({
+    action: "create_hunt",
+    creator,
+    title,
+    description,
+    start_time,
+    end_time,
+    ...(imageCid ? { image_cid: imageCid } : {}),
+  })
 
   // Ask the wallet for the public key. Different wallets expose slightly
   // different APIs; we try common ones (Freighter, Soroban wallet adapter).
