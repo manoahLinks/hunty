@@ -94,23 +94,15 @@ export async function createHunt(
     .setTimeout(180)
     .build()
 
-  // Wallet signing varies: Freighter provides signTransaction and returns
-  // a signed XDR; some adapters expose signTransaction as well. We try
-  // common methods and fall back to throwing an instructive error.
-  let signedXdr: string | undefined
+  // Wallet signing: errors (including user rejection) are intentionally allowed
+  // to propagate so withTransactionToast can classify and display them.
+  let signedXdr: string
   if (wallet.signTransaction) {
-    // Freighter-like API: signTransaction(txXdr, network)
     signedXdr = await wallet.signTransaction(tx.toXDR())
-  } else if (wallet.request) {
-    try {
-      signedXdr = await wallet.request({ method: "signTransaction", params: { tx: tx.toXDR() } })
-    } catch (_) {
-      // continue to error
-    }
-  }
-
-  if (!signedXdr) {
-    throw new Error("Wallet does not support signing via the detected API; please use Freighter or Soroban Wallet.")
+  } else if (wallet.request && typeof wallet.request === "function") {
+    signedXdr = await wallet.request({ method: "signTransaction", params: { tx: tx.toXDR() } })
+  } else {
+    throw new Error("No signing method available. Install Freighter or Soroban Wallet.")
   }
 
   // Submit signed transaction XDR to RPC
@@ -172,19 +164,13 @@ export async function activateHunt(huntId: number): Promise<ActivateHuntResult> 
     .build()
 
   const signWallet = wallet as { signTransaction?: (xdr: string) => Promise<string>; request?: (arg: { method: string; params?: { tx: string } }) => Promise<string> }
-  let signedXdr: string | undefined
+  let signedXdr: string
   if (signWallet.signTransaction) {
     signedXdr = await signWallet.signTransaction(tx.toXDR())
   } else if (typeof signWallet.request === "function") {
-    try {
-      signedXdr = await signWallet.request({ method: "signTransaction", params: { tx: tx.toXDR() } })
-    } catch {
-      // continue to error
-    }
-  }
-
-  if (!signedXdr) {
-    throw new Error("Wallet does not support signing via the detected API; please use Freighter or Soroban Wallet.")
+    signedXdr = await signWallet.request({ method: "signTransaction", params: { tx: tx.toXDR() } })
+  } else {
+    throw new Error("No signing method available. Install Freighter or Soroban Wallet.")
   }
 
   const res = await server.submitTransaction(signedXdr)
@@ -258,19 +244,13 @@ export async function addClue(
     signTransaction?: (xdr: string) => Promise<string>
     request?: (arg: { method: string; params?: { tx: string } }) => Promise<string>
   }
-  let signedXdr: string | undefined
+  let signedXdr: string
   if (signWallet.signTransaction) {
     signedXdr = await signWallet.signTransaction(tx.toXDR())
   } else if (typeof signWallet.request === "function") {
-    try {
-      signedXdr = await signWallet.request({ method: "signTransaction", params: { tx: tx.toXDR() } })
-    } catch {
-      // continue to error
-    }
-  }
-
-  if (!signedXdr) {
-    throw new Error("Wallet does not support signing via the detected API; please use Freighter or Soroban Wallet.")
+    signedXdr = await signWallet.request({ method: "signTransaction", params: { tx: tx.toXDR() } })
+  } else {
+    throw new Error("No signing method available. Install Freighter or Soroban Wallet.")
   }
 
   const res2 = await server.submitTransaction(signedXdr)

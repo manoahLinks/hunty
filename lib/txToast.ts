@@ -1,4 +1,5 @@
 import { toast } from "sonner"
+import { parseStellarError } from "@/lib/stellarErrors"
 
 type TxToastMessages = {
   loading?: string
@@ -6,83 +7,55 @@ type TxToastMessages = {
   success?: string
 }
 
-function formatSorobanError(error: unknown): string {
-  const base = "Error"
-
-  if (error instanceof Error) {
-    return `${base}: ${error.message}`
-  }
-
-  if (typeof error === "string") {
-    return `${base}: ${error}`
-  }
-
-  // Try to surface common RPC / Soroban-style error objects
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const anyErr = error as any
-
-  if (anyErr?.response?.data) {
-    try {
-      const data = anyErr.response.data
-      if (typeof data === "string") {
-        return `${base}: ${data}`
-      }
-      if (data.error) {
-        return `${base}: ${String(data.error)}`
-      }
-      if (data.detail) {
-        return `${base}: ${String(data.detail)}`
-      }
-      if (data.message) {
-        return `${base}: ${String(data.message)}`
-      }
-      if (data.extras?.result_codes?.transaction) {
-        return `${base}: ${String(data.extras.result_codes.transaction)}`
-      }
-    } catch {
-      // fall through to generic formatting
-    }
-  }
-
-  try {
-    return `${base}: ${JSON.stringify(error)}`
-  } catch {
-    return base
-  }
-}
-
 /**
- * Wrap a blockchain transaction-like promise in standardized toast notifications.
+ * Wraps a blockchain write operation in a three-phase sonner toast lifecycle:
  *
- * - loading: "Confirming in Wallet..."
- * - submitted: "Transaction Submitted"
- * - success: "Success!"
- * - error: parsed Soroban / RPC error when possible
+ *   1. **Loading** — shown immediately while the wallet prompt is open.
+ *   2. **Submitted / Success** — replaces the loading toast on resolution.
+ *   3. **Error** — replaces the loading toast with a human-readable message
+ *      parsed by `parseStellarError`. Wallet rejection shows a yellow warning
+ *      instead of a red error so the UI never looks broken when the user
+ *      simply cancels.
+ *
+ * The loading toast is always dismissed (via its id) on both success and
+ * failure, so the UI never hangs in a "Confirming in Wallet…" state.
  */
 export async function withTransactionToast<T>(
   fn: () => Promise<T>,
   messages: TxToastMessages = {}
 ): Promise<T> {
   const {
-    loading = "Confirming in Wallet...",
+    loading = "Confirming in Wallet…",
     submitted = "Transaction Submitted",
     success = "Success!",
   } = messages
 
-  const result = await toast.promise(
-    fn(),
-    {
-      loading,
-      success: submitted,
-      error: (err) => formatSorobanError(err),
+  // Show the initial loading toast and keep its id so we can update it.
+  const toastId = toast.loading(loading)
+
+  try {
+    const result = await fn()
+
+    // Transition to submitted state.
+    toast.success(submitted, { id: toastId })
+
+    // Optionally fire a second, distinct success notification.
+    if (success && success !== submitted) {
+      setTimeout(() => toast.success(success), 600)
     }
-  )
 
-  // Optionally show a follow-up success toast distinct from "Transaction Submitted"
-  if (success && success !== submitted) {
-    toast.success(success)
+    return result
+  } catch (err) {
+    const parsed = parseStellarError(err)
+
+    if (parsed.code === "WALLET_REJECTED") {
+      // Yellow warning — user intentionally cancelled, not an error.
+      toast.warning(parsed.message, { id: toastId })
+    } else {
+      toast.error(parsed.message, { id: toastId })
+    }
+
+    // Re-throw so callers can run their own cleanup (e.g. reset isPublishing).
+    throw err
   }
-
-  return result
 }
-
