@@ -46,13 +46,14 @@ export function Header({ balance = "0" }: { balance?: string }) {
 
   return (
     <>
-      <header className="flex flex-row justify-between items-center py-4 sm:py-6 lg:py-8 px-4 max-w-[1600px] mx-auto pb-8 sm:pb-12 lg:pb-24 gap-4">
+      <header className="flex flex-row flex-wrap sm:flex-nowrap justify-between items-center py-4 sm:py-6 lg:py-8 px-4 max-w-[1600px] mx-auto pb-8 sm:pb-12 lg:pb-24 gap-4">
+        {/* Logo */}
         <div className="font-normal text-xl sm:text-2xl md:text-3xl lg:text-4xl bg-gradient-to-br from-[#2F2FFF] to-[#E87785] bg-clip-text text-transparent flex-shrink-0">
           Hunty
         </div>
 
         {mounted && connected ? (
-          <div className="flex flex-row items-center gap-2 sm:gap-4 min-w-0 flex-1 justify-end">
+          <div className="flex flex-row items-center gap-2 sm:gap-4 min-w-0 w-full sm:w-auto flex-1 justify-between sm:justify-end">
             {/* Balance pill */}
             <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 rounded-full">
               <Coin />
@@ -72,12 +73,14 @@ export function Header({ balance = "0" }: { balance?: string }) {
                 }}
               >
                 <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 rounded-full bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] flex-shrink-0" />
-                <span className="font-black bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text truncate max-w-[80px] sm:max-w-[120px] md:max-w-[150px] lg:max-w-[200px]">
+                <span className="font-black bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text truncate max-w-[70px] sm:max-w-[120px] md:max-w-[150px] lg:max-w-[200px]">
                   {displayKey}
                 </span>
                 {/* Chevron indicator */}
                 <svg
-                  className={`w-3 h-3 ml-1 text-[#3737A4] transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
+                  className={`w-3 h-3 ml-1 text-[#3737A4] transition-transform duration-200 ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
