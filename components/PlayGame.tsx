@@ -1,19 +1,18 @@
 "use client";
 
-import type React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
-
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { Header } from "@/components/Header";
-import Share from "./icons/Share";
-import Replay from "./icons/Replay";
-import { HuntCards } from "./HuntCards";
-import { get_hunt, get_clue_info } from "@/lib/contracts/hunt";
+import { toast } from "sonner";
 
-// ✅ Import PlayerProgressPanel for progress display
+import { Button } from "@/components/ui/button";
+import { Header } from "@/components/Header";
 import { PlayerProgressPanel } from "@/components/PlayerProgressPanel";
+import { get_clue_info, get_hunt } from "@/lib/contracts/hunt";
+
+import { HuntCards } from "./HuntCards";
+import Replay from "./icons/Replay";
+import Share from "./icons/Share";
 
 interface Hunt {
   id: number;
@@ -30,7 +29,6 @@ interface PlayGameProps {
   onExit: () => void;
   onGameComplete: () => void;
   gameCompleteModal: React.ReactNode;
-  /** Overall hunt/game ID from the contract. When provided, answers are submitted on-chain. */
   huntId?: number;
 }
 
@@ -48,25 +46,9 @@ export function PlayGame({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [solvedClues, setSolvedClues] = useState<Set<number>>(new Set());
+  const [fetchAttempt, setFetchAttempt] = useState(0);
 
-  const handleShare = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    const shareData = {
-      title: gameName,
-      text: `Join my scavenger hunt: ${gameName}`,
-      url,
-    };
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch {
-        // user cancelled — no-op
-      }
-    } else {
-      await navigator.clipboard.writeText(url);
-      alert("Link copied to clipboard!");
-    }
-  };
+  const solvedCount = solvedClues.size;
 
   useEffect(() => {
     if (huntId == null) return;
@@ -74,13 +56,18 @@ export function PlayGame({
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setFetchedClues(null);
+    setCurrentCardIndex(0);
+    setScore(0);
+    setSolvedClues(new Set());
 
     async function fetchClues() {
       try {
-        const huntInfo = await get_hunt(huntId!);
+        const huntInfo = await get_hunt(huntId);
         const clues: Hunt[] = [];
+
         for (let i = 0; i < huntInfo.totalClues; i++) {
-          const clue = await get_clue_info(huntId!, i);
+          const clue = await get_clue_info(huntId, i);
           clues.push({
             id: clue.id,
             title: clue.question,
@@ -90,32 +77,36 @@ export function PlayGame({
             points: clue.points,
           });
         }
+
         if (!cancelled) {
           setFetchedClues(clues);
         }
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to fetch clues",
-          );
+          const message =
+            err instanceof Error ? err.message : "Failed to fetch clues";
+          setError(message);
+          toast.error(message);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     fetchClues();
+
     return () => {
       cancelled = true;
     };
-  }, [huntId]);
+  }, [huntId, fetchAttempt]);
 
-  const hunts = fetchedClues ?? huntsProp;
-  const solvedCount = solvedClues.size;
+  const hunts = huntId != null ? fetchedClues ?? [] : fetchedClues ?? huntsProp;
+  const hasHunts = hunts.length > 0;
 
   const handleScoreUpdate = (points: number) => {
     setScore((prev) => prev + points);
-    // ✅ Removed setSolvedCount; solvedCount is derived from solvedClues
   };
 
   const handleClueUnlock = (clueIndex: number) => {
@@ -123,6 +114,7 @@ export function PlayGame({
     if (clue) {
       setSolvedClues((prev) => new Set(prev).add(clue.id));
     }
+
     if (clueIndex < hunts.length - 1) {
       setCurrentCardIndex(clueIndex + 1);
     } else {
@@ -130,11 +122,11 @@ export function PlayGame({
     }
   };
 
-  if (error) {
+  if (loading && !hasHunts) {
     return (
       <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 text-lg mb-4">{error}</p>
+        <div className="text-center rounded-3xl bg-white px-8 py-10 shadow-lg">
+          <p className="text-slate-700 text-lg mb-4">Loading clues...</p>
           <Button variant="ghost" onClick={onExit}>
             Go Back
           </Button>
@@ -142,6 +134,43 @@ export function PlayGame({
       </div>
     );
   }
+
+  if (error && !hasHunts) {
+    return (
+      <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] flex items-center justify-center">
+        <div className="text-center rounded-3xl bg-white px-8 py-10 shadow-lg">
+          <p className="text-red-500 text-lg mb-4">{error}</p>
+          <div className="flex items-center justify-center gap-3">
+            {huntId != null && (
+              <Button onClick={() => setFetchAttempt((current) => current + 1)}>
+                Retry
+              </Button>
+            )}
+            <Button variant="ghost" onClick={onExit}>
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasHunts) {
+    return (
+      <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] flex items-center justify-center">
+        <div className="text-center rounded-3xl bg-white px-8 py-10 shadow-lg">
+          <p className="text-slate-700 text-lg mb-4">
+            No clues available for this hunt yet.
+          </p>
+          <Button variant="ghost" onClick={onExit}>
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const activeHunt = hunts[currentCardIndex];
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff]">
@@ -178,7 +207,6 @@ export function PlayGame({
             Play {gameName}
           </h1>
 
-          {/* Player progress panel — auto-updates after each correct answer */}
           <PlayerProgressPanel
             cluesSolved={solvedCount}
             totalClues={hunts.length}
@@ -189,21 +217,15 @@ export function PlayGame({
             <Button className="bg-gradient-to-b from-[#E3225C] to-[#7B1C4A] hover:bg-pink-600 text-white px-6 py-2 rounded-full flex items-center gap-2">
               <Replay /> Reset
             </Button>
-            <Button
-              onClick={handleShare}
-              className="bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:bg-green-700 text-white px-6 py-2 rounded-full flex items-center gap-2"
-            >
+            <Button className="bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:bg-green-700 text-white px-6 py-2 rounded-full flex items-center gap-2">
               <Share />
               Share Link
             </Button>
           </div>
         </div>
 
-        {/* Updated layout for centered first card and right-positioned subsequent cards */}
         <div className="relative flex justify-center mt-8 min-h-[500px] overflow-x-auto">
-          {/* Container for all cards */}
           <div className="relative flex items-start justify-center w-full max-w-none px-8">
-            {/* Left side - Previous cards (optional) */}
             {currentCardIndex > 0 && (
               <div className="absolute left-0 top-0 flex flex-col gap-4 mr-8">
                 <div className="opacity-40 scale-60 transform origin-right">
@@ -220,10 +242,9 @@ export function PlayGame({
               </div>
             )}
 
-            {/* Center - Current active card */}
             <div className="flex justify-center mx-auto z-10">
               <HuntCards
-                hunts={[hunts[currentCardIndex]]}
+                hunts={activeHunt ? [activeHunt] : []}
                 isActive={true}
                 isLoading={loading}
                 huntId={huntId}
@@ -235,7 +256,6 @@ export function PlayGame({
               />
             </div>
 
-            {/* Right side - Next cards */}
             {currentCardIndex < hunts.length - 1 && (
               <div className="absolute right-0 top-0 flex flex-col gap-6 ml-8">
                 {hunts
@@ -254,8 +274,6 @@ export function PlayGame({
                       />
                     </div>
                   ))}
-
-                {/* Show indicator if there are more cards */}
                 {currentCardIndex + 3 < hunts.length && (
                   <div className="text-center text-slate-600 text-sm mt-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
                     +{hunts.length - currentCardIndex - 3} more cards

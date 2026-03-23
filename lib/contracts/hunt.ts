@@ -1,5 +1,6 @@
 import Server, { TransactionBuilder, Networks, Operation } from "@stellar/stellar-sdk"
 import { getHunt as getStoredHunt, getHuntClues } from "@/lib/huntStore"
+import { parseStellarError } from "@/lib/stellarErrors"
 
 export type ClueInfo = {
   id: number
@@ -30,6 +31,47 @@ export class AnswerIncorrectError extends Error {
   }
 }
 
+const HUNT_FETCH_NETWORK_PATTERNS = [
+  /network( request)? (error|failed)/i,
+  /failed to fetch/i,
+  /fetch failed/i,
+  /request failed/i,
+  /rpc.*timed? out/i,
+  /timed? out/i,
+  /timeout/i,
+  /socket hang up/i,
+  /econn(reset|refused)/i,
+  /enotfound/i,
+  /ehostunreach/i,
+  /offline/i,
+]
+
+function normalizeHuntFetchError(error: unknown, fallbackMessage: string): Error {
+  const parsed = parseStellarError(error)
+  const errMessage =
+    error instanceof Error ? error.message : typeof error === "string" ? error : ""
+
+  const anyErr = error as
+    | {
+        response?: { status?: number }
+        status?: number
+      }
+    | undefined
+  const status = anyErr?.response?.status ?? anyErr?.status
+
+  if (
+    parsed.code === "TX_TIMEOUT" ||
+    status === 408 ||
+    status === 504 ||
+    HUNT_FETCH_NETWORK_PATTERNS.some((pattern) => pattern.test(errMessage))
+  ) {
+    return new Error("Network Error")
+  }
+
+  if (error instanceof Error) return error
+  return new Error(fallbackMessage)
+}
+
 export type SubmitAnswerResult = {
   txHash: string
   /** The contract event emitted on success. */
@@ -55,7 +97,11 @@ export async function createHunt(
   const RPC = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || "https://rpc.testnet.soroban.stellar.org"
   const server = new Server(RPC)
 
-  const anyWin = window as any
+  const anyWin = window as Window & {
+    freighter?: unknown
+    soroban?: unknown
+    sorobanWallet?: unknown
+  }
   const wallet = anyWin.freighter || anyWin.soroban || anyWin.sorobanWallet
   if (!wallet) {
     throw new Error(
@@ -83,7 +129,7 @@ export async function createHunt(
     try {
       const resp = await wallet.request({ method: "getPublicKey" })
       publicKey = resp
-    } catch (_) {
+    } catch {
       // ignore
     }
   }
@@ -285,6 +331,8 @@ export type LeaderboardEntry = {
  * (leveraging the manageData pattern) with a robust mock data fallback.
  */
 export async function get_hunt_leaderboard(huntId: number): Promise<LeaderboardEntry[]> {
+  void huntId
+
   // Simulate network latency
   await new Promise((resolve) => setTimeout(resolve, 800))
 
@@ -307,15 +355,19 @@ export async function get_hunt_leaderboard(huntId: number): Promise<LeaderboardE
 export async function get_hunt(huntId: number): Promise<HuntInfo> {
   await new Promise((resolve) => setTimeout(resolve, 300))
 
-  const stored = getStoredHunt(String(huntId))
-  if (!stored) throw new Error(`Hunt ${huntId} not found`)
+  try {
+    const stored = getStoredHunt(String(huntId))
+    if (!stored) throw new Error(`Hunt ${huntId} not found`)
 
-  return {
-    id: stored.id,
-    title: stored.title,
-    description: stored.description,
-    totalClues: stored.cluesCount,
-    status: stored.status,
+    return {
+      id: stored.id,
+      title: stored.title,
+      description: stored.description,
+      totalClues: stored.cluesCount,
+      status: stored.status,
+    }
+  } catch (error) {
+    throw normalizeHuntFetchError(error, "Failed to fetch hunt")
   }
 }
 
@@ -326,14 +378,18 @@ export async function get_hunt(huntId: number): Promise<HuntInfo> {
 export async function get_clue_info(huntId: number, clueId: number): Promise<ClueInfo> {
   await new Promise((resolve) => setTimeout(resolve, 200))
 
-  const clues = getHuntClues(huntId)
-  const clue = clues[clueId]
-  if (!clue) throw new Error(`Clue ${clueId} not found for hunt ${huntId}`)
+  try {
+    const clues = getHuntClues(huntId)
+    const clue = clues[clueId]
+    if (!clue) throw new Error(`Clue ${clueId} not found for hunt ${huntId}`)
 
-  return {
-    id: clue.id,
-    question: clue.question,
-    points: clue.points,
+    return {
+      id: clue.id,
+      question: clue.question,
+      points: clue.points,
+    }
+  } catch (error) {
+    throw normalizeHuntFetchError(error, "Failed to fetch clue")
   }
 }
 

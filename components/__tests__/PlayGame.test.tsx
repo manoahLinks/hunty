@@ -1,0 +1,61 @@
+/* eslint-disable @next/next/no-img-element */
+
+import React from "react"
+import { render, screen, waitFor } from "@testing-library/react"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+import { PlayGame } from "../PlayGame"
+import * as huntStore from "@/lib/huntStore"
+
+const { toastError } = vi.hoisted(() => ({
+  toastError: vi.fn(),
+}))
+
+vi.mock("next/image", () => ({
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} alt={props.alt ?? ""} />,
+}))
+
+vi.mock("sonner", () => ({
+  toast: {
+    error: toastError,
+  },
+}))
+
+vi.mock("@/components/Header", () => ({
+  Header: () => <div data-testid="header" />,
+}))
+
+vi.mock("@/components/PlayerProgressPanel", () => ({
+  PlayerProgressPanel: () => <div data-testid="player-progress" />,
+}))
+
+describe("PlayGame", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("shows Network Error instead of crashing when hunt fetch times out", async () => {
+    vi.spyOn(huntStore, "getHunt").mockImplementation(() => {
+      throw new Error("Soroban RPC request timed out")
+    })
+
+    render(
+      <PlayGame
+        hunts={[]}
+        gameName="Hunty"
+        onExit={vi.fn()}
+        onGameComplete={vi.fn()}
+        gameCompleteModal={null}
+        huntId={56}
+      />
+    )
+
+    expect(screen.getByText("Loading clues...")).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(screen.getByText("Network Error")).toBeInTheDocument()
+    })
+
+    expect(toastError).toHaveBeenCalledWith("Network Error")
+  })
+})

@@ -1,38 +1,32 @@
-"use client";
+"use client"
 
-import { ReactNode, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { ReactNode, useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
 
-import { z } from "zod";
-import { createHunt } from "@/lib/contracts/hunt";
-import { withTransactionToast } from "@/lib/txToast";
+import { z } from "zod"
+import { createHunt } from "@/lib/contracts/hunt"
+import { withTransactionToast } from "@/lib/txToast"
 
-import { dynapuff } from "@/lib/font";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Plus,
-  QrCode,
-  Download,
-  Printer,
-} from "lucide-react";
-import { Header } from "@/components/Header";
-import { CreateGameTabs } from "@/components/CreateGameTabs";
-import { HuntForm } from "@/components/HuntForm";
-import { RewardsPanel } from "@/components/RewardsPanel";
-import { GamePreview } from "@/components/GamePreview";
-import { PublishModal } from "@/components/PublishModal";
-import { GameCompleteModal } from "@/components/GameCompleteModal";
-import { PlayGame } from "@/components/PlayGame";
-import Share from "@/components/icons/Share";
-import PlayCircle from "@/components/icons/PlayCircle";
-import ToggleButton from "@/components/ToggleButton";
-import Replay from "@/components/icons/Replay";
-import Medal from "@/components/icons/Medal";
-import { Reward } from "@/components/RewardsPanel";
+import { dynapuff } from "@/lib/font"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ArrowLeft, ArrowRight, Plus, QrCode, Download, Printer } from "lucide-react"
+import { QrCodeModal } from "@/components/QrCodeModal"
+import { Header } from "@/components/Header"
+import { CreateGameTabs } from "@/components/CreateGameTabs"
+import { HuntForm } from "@/components/HuntForm"
+import { RewardsPanel } from "@/components/RewardsPanel"
+import { GamePreview } from "@/components/GamePreview"
+import { PublishModal } from "@/components/PublishModal"
+import { GameCompleteModal } from "@/components/GameCompleteModal"
+import { PlayGame } from "@/components/PlayGame"
+import Share from "@/components/icons/Share"
+import PlayCircle from "@/components/icons/PlayCircle"
+import ToggleButton from "@/components/ToggleButton"
+import Replay from "@/components/icons/Replay"
+import Medal from "@/components/icons/Medal"
+import { Reward } from "@/components/RewardsPanel"
 
 interface Hunt {
   id: number;
@@ -116,6 +110,17 @@ export default function CreateGame() {
       {
         message: "Start Date must be before End Date.",
         path: ["startDate"],
+      },
+    )
+    .refine(
+      (data) => {
+        const e = new Date(data.endDate);
+        if (!isNaN(e.getTime())) return e > new Date();
+        return true;
+      },
+      {
+        message: "End Date must be in the future.",
+        path: ["endDate"],
       },
     );
 
@@ -235,25 +240,6 @@ export default function CreateGame() {
       router.push("/hunts");
     } finally {
       setIsPublishing(false);
-    }
-  };
-
-  const handleShare = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    const shareData = {
-      title: gameName,
-      text: `Join my scavenger hunt: ${gameName}`,
-      url,
-    };
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch {
-        // user cancelled — no-op
-      }
-    } else {
-      await navigator.clipboard.writeText(url);
-      alert("Link copied to clipboard!");
     }
   };
 
@@ -501,15 +487,12 @@ export default function CreateGame() {
                         <Share />
                         Share Now
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="rounded-lg border-1 border-transparent bg-white bg-clip-padding shadow-sm hover:bg-slate-50 [background:linear-gradient(white,white)_padding-box,linear-gradient(to_bottom,#3737A4,#0C0C4F)_border-box]"
-                      >
+                      <Button size="icon" variant="outline" className="rounded-lg border-1 border-transparent bg-white bg-clip-padding shadow-sm hover:bg-slate-50 [background:linear-gradient(white,white)_padding-box,linear-gradient(to_bottom,#3737A4,#0C0C4F)_border-box]" onClick={() => setQrOpen(true)} title="Show QR Code">
                         <QrCode className="w-4 h-4 text-[#0C0C4F]" />
                       </Button>
                     </div>
                   </div>
+      <QrCodeModal open={qrOpen} onClose={() => setQrOpen(false)} url={typeof window !== "undefined" ? window.location.href : ""} />
 
                   <div className="flex items-center justify-between mb-16">
                     <label className="block text-xl font-normal text-[#808080]">

@@ -2,6 +2,8 @@
 
 import { HuntControls } from "@/components/HuntControls";
 import { Button } from "@/components/ui/button";
+import { QrCode } from "lucide-react";
+import { QrCodeModal } from "@/components/QrCodeModal";
 import { StoredHunt, updateHuntStatus } from "@/lib/huntStore";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -28,6 +30,7 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
     isRegistered: false,
     loading: true,
   });
+  const [qrOpen, setQrOpen] = useState(false);
 
   // Check wallet availability and connection on mount
   useEffect(() => {
@@ -133,6 +136,8 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
     updateHuntStatus(huntId, "Cancelled");
   };
 
+  const huntUrl = typeof window !== "undefined" ? `${window.location.origin}/hunt/${hunt.id}` : "";
+
   return (
     <div className="space-y-6">
       {/* Registration Section */}
@@ -154,25 +159,30 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
         )}
 
         {/* Share button */}
-        <Button
-          onClick={handleShare}
-        >
-          {copied ? (
-            <>
-              <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-emerald-400">Copied!</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-              Share
-            </>
-          )}
-        </Button>
+
+        <div className="flex gap-2">
+          <Button onClick={handleShare}>
+            {copied ? (
+              <>
+                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-emerald-400">Copied!</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Share
+              </>
+            )}
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => setQrOpen(true)} title="Show QR Code">
+            <QrCode className="w-4 h-4" />
+          </Button>
+        </div>
+  <QrCodeModal open={qrOpen} onClose={() => setQrOpen(false)} url={huntUrl} />
 
         <HuntControls
           hunt={hunt}

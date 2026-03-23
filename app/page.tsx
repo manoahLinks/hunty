@@ -12,6 +12,7 @@ import { Header } from "@/components/Header"
 import { getAllHunts } from "@/lib/huntStore"
 import { LeaderboardTable } from "@/components/LeaderBoardTable"
 import { hankenGrotesk } from "@/lib/font"
+import OnboardingTour from "@/components/OnboardingTour"
 
 interface WalletOption {
   id: string
@@ -92,6 +93,7 @@ export default function GameArcade() {
     <div
       className={`min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] pb-[75px]`}
     >
+      <OnboardingTour />
       {/* Header */}
       <Header
         balance={balance}
@@ -125,7 +127,7 @@ export default function GameArcade() {
           >
             Leaderboard
           </Button>
-          <Button className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">Play Game</Button>
+          <Button id="play-button" className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">Play Game</Button>
         </div>
 
         {/* Leaderboard Section */}
