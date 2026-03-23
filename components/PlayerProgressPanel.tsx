@@ -41,7 +41,14 @@ export const PlayerProgressPanel: React.FC<PlayerProgressPanelProps> = ({
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+      <div 
+        className="w-full h-3 bg-slate-100 rounded-full overflow-hidden"
+        role="progressbar"
+        aria-valuenow={percentage}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Clues solved progress"
+      >
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#3737A4] to-[#0C0C4F] transition-all duration-500 ease-out"
           style={{ width: `${percentage}%` }}
