@@ -15,6 +15,8 @@ export interface Hunt {
   link?: string;
   code?: string;
   image?: string;
+  hint?: string;
+  hintCost?: number;
 }
 
 interface HuntCardsProps {
@@ -56,6 +58,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
   const [success, setSuccess] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [imgGatewayIdx, setImgGatewayIdx] = useState(0);
+  const [hintRevealed, setHintRevealed] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isPending) return;
@@ -76,7 +79,8 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
         // ClueCompleted event received
         setSuccess(true);
         setInput("");
-        onScoreUpdate?.(points ?? DEFAULT_POINTS);
+        const actualPoints = Math.max(0, (points ?? DEFAULT_POINTS) - (hintRevealed ? (hunt.hintCost || 0) : 0));
+        onScoreUpdate?.(actualPoints);
         setTimeout(() => {
           setSuccess(false);
           onUnlock?.();
@@ -97,7 +101,8 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
         setSuccess(true);
         setError("");
         setInput("");
-        onScoreUpdate?.(points ?? DEFAULT_POINTS);
+        const actualPoints = Math.max(0, (points ?? DEFAULT_POINTS) - (hintRevealed ? (hunt.hintCost || 0) : 0));
+        onScoreUpdate?.(actualPoints);
         setTimeout(() => {
           setSuccess(false);
           onUnlock?.();
@@ -173,6 +178,27 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
           <Image src={picture} alt="hunt" width={180} height={180} />
         )}
       </div>
+
+      {hunt.hint && !solved && (
+        <div className="bg-white px-6 py-2 border-b border-gray-100">
+          {!hintRevealed ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+              onClick={() => setHintRevealed(true)}
+              disabled={isLocked}
+            >
+              Reveal Hint (-{hunt.hintCost || 0} pts)
+            </Button>
+          ) : (
+            <div className="bg-blue-50 text-blue-800 p-3 rounded-xl text-sm border border-blue-100">
+              <span className="font-semibold text-blue-900 mr-2">Hint:</span>
+              {hunt.hint}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Input and button only for active, non-preview cards */}
       <div className="bg-white flex gap-2 p-6 rounded-b-2xl items-center">

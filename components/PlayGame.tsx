@@ -21,6 +21,8 @@ interface Hunt {
   link: string;
   code: string;
   points?: number;
+  hint?: string;
+  hintCost?: number;
 }
 
 interface PlayGameProps {
@@ -63,11 +65,11 @@ export function PlayGame({
 
     async function fetchClues() {
       try {
-        const huntInfo = await get_hunt(huntId);
+        const huntInfo = await get_hunt(huntId!);
         const clues: Hunt[] = [];
 
         for (let i = 0; i < huntInfo.totalClues; i++) {
-          const clue = await get_clue_info(huntId, i);
+          const clue = await get_clue_info(huntId!, i);
           clues.push({
             id: clue.id,
             title: clue.question,
@@ -75,6 +77,8 @@ export function PlayGame({
             link: "",
             code: "",
             points: clue.points,
+            hint: clue.hint,
+            hintCost: clue.hintCost,
           });
         }
 
@@ -180,7 +184,7 @@ export function PlayGame({
         <div className="flex items-center gap-4 mb-8">
           <Button
             variant="ghost"
-            onClick={handleExit}
+            onClick={onExit}
             className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
           >
             <ArrowLeft className="w-6 h-6 fill-[#0C0C4F]" />

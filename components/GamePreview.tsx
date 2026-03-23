@@ -11,6 +11,8 @@ interface Hunt {
   description: string
   link: string
   code: string
+  hint?: string
+  hintCost?: number
 }
 
 interface GamePreviewProps {
