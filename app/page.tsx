@@ -13,6 +13,7 @@ import { getAllHunts } from "@/lib/huntStore"
 import { LeaderboardTable } from "@/components/LeaderBoardTable"
 import { hankenGrotesk } from "@/lib/font"
 import OnboardingTour from "@/components/OnboardingTour"
+import { GlobalActivityFeed } from "@/components/GlobalActivityFeed"
 
 interface WalletOption {
   id: string
@@ -31,10 +32,8 @@ function fetchAllHunts() {
 export default function GameArcade() {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false)
   const [isConnectingWallet, setIsConnectingWallet] = useState(false)
-  const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null)
   const [displayName, setDisplayName] = useState("")
   const [gameLink, setGameLink] = useState("")
-  const [isConnected, setIsConnected] = useState(false)
   const [walletAddress, setWalletAddress] = useState("")
   const [balance, setBalance] = useState("")
 
@@ -64,25 +63,16 @@ export default function GameArcade() {
   }, [])
 
   const handleWalletSelect = (wallet: WalletOption) => {
-    setSelectedWallet(wallet)
     setIsConnectingWallet(true)
     // Simulate wallet address generation
     setWalletAddress("0xe5f...E5")
   }
 
   const handleContinue = () => {
-    setIsConnected(true)
     setBalance("24.2453")
     setIsWalletModalOpen(false)
     setIsConnectingWallet(false)
-    setSelectedWallet(null)
     setDisplayName("")
-  }
-
-  const handleDisconnect = () => {
-    setIsConnected(false)
-    setWalletAddress("")
-    setBalance("")
   }
 
   const handleCreateGame = () => {
@@ -221,8 +211,13 @@ export default function GameArcade() {
 
         </div>
 
+        {/* Global Activity Feed */}
+        <div className="mt-10 mb-10">
+          <GlobalActivityFeed />
+        </div>
+
         {/* Active Hunts Grid */}
-        <div className="mt-10">
+        <div className="mt-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl md:text-3xl font-semibold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent">
               Browse Active Hunts

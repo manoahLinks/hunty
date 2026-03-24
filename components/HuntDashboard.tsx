@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import type { StoredHunt } from "@/lib/huntStore"
 import { ActivateHuntModal } from "@/components/ActivateHuntModal"
+import { LeaderboardTable } from "@/components/LeaderBoardTable"
 import Link from "next/link"
 
 interface ClueRow {
