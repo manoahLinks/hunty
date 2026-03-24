@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ToggleSwitch from "./ToggleButton"
-import { Minus, Plus, Trash2 } from "lucide-react"
+import { Minus, Plus, Trash2, Eye, EyeOff } from "lucide-react"
 import { ChangeEvent, useRef, useState } from "react"
 import { addClue } from "@/lib/contracts/hunt"
 import { saveClueLocally } from "@/lib/huntStore"
 import { withTransactionToast } from "@/lib/txToast"
 import { uploadToIPFS } from "@/lib/ipfs"
 import { toast } from "sonner"
+import { HuntCards } from "./HuntCards"
 
 interface Hunt {
   id: number
@@ -44,6 +45,7 @@ export function HuntForm({ hunt, onUpdate, onRemove, huntId, onCluesSaved }: Hun
     { id: 1, question: "", answer: "", points: 10, hint: "", hintCost: 0 },
   ])
   const [isSavingClues, setIsSavingClues] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -114,11 +116,42 @@ export function HuntForm({ hunt, onUpdate, onRemove, huntId, onCluesSaved }: Hun
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-2xl font-semibold text-transparent bg-clip-text">Hunt {hunt.id}</h3>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowPreview(!showPreview)}
+            variant="outline"
+            size="sm"
+            className="flex gap-1 text-slate-600 hover:text-slate-800"
+          >
+            {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {showPreview ? "Hide Preview" : "Preview"}
+          </Button>
           <Button onClick={onRemove} variant="ghost" size="sm" className="text-red-500 hover:text-red-700 flex gap-0.5">
             <Minus />
             Remove
           </Button>
+        </div>
       </div>
+
+      {showPreview && (
+        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+          <p className="text-xs text-slate-500 mb-3 font-medium">Live Preview</p>
+          <div className="flex justify-center">
+            <HuntCards
+              hunts={[{
+                id: hunt.id,
+                title: hunt.title || "Untitled Hunt",
+                description: hunt.description || "No description yet...",
+                link: hunt.link,
+                code: hunt.code,
+                image: hunt.image,
+              }]}
+              preview={true}
+              isActive={false}
+            />
+          </div>
+        </div>
+      )}
 
       <Input
         placeholder="Title of the Hunt"
