@@ -3,32 +3,9 @@
  * Persisted in localStorage so activated hunts appear in the arcade after refresh.
  */
 
-export type HuntStatus = "Active" | "Completed" | "Draft" | "Cancelled";
+import type { HuntStatus, StoredHunt, Clue } from "@/lib/types"
 
-export interface StoredHunt {
-  id: number
-  title: string
-  description: string
-  cluesCount: number
-  status: HuntStatus
-  rewardType: 'XLM' | 'NFT' | 'Both'
-  /** Unix timestamp in seconds — when the hunt starts. */
-  startTime?: number
-  /** Unix timestamp in seconds — when the hunt ends. */
-  endTime?: number
-  creatorEmail?: string
-  emailNotifications?: boolean
-}
-
-export interface Clue {
-  id: number
-  huntId: number
-  question: string
-  answer: string
-  points: number
-  hint?: string
-  hintCost?: number
-}
+export type { HuntStatus, StoredHunt, Clue }
 
 const STORAGE_KEY = "hunty_hunts"
 const CLUES_KEY = "hunty_clues"

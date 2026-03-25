@@ -4,19 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Eye} from "lucide-react"
 import PlayCircle from "@/components/icons/PlayCircle"
 import { HuntCards } from "./HuntCards"
-
-interface Hunt {
-  id: number
-  title: string
-  description: string
-  link: string
-  code: string
-  hint?: string
-  hintCost?: number
-}
+import type { HuntCard } from "@/lib/types"
 
 interface GamePreviewProps {
-  hunts: Hunt[]
+  hunts: HuntCard[]
 }
 
 export function GamePreview({ hunts }: GamePreviewProps) {

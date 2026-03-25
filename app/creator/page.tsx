@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/Header"
 import { useFreighterWallet } from "@/hooks/useFreighterWallet"
-import { getHuntsByCreator, type StoredHunt } from "@/lib/huntStore"
+import type { StoredHunt } from "@/lib/types"
+import { getHuntsByCreator } from "@/lib/huntStore"
 
 function StatusBadge({ status }: { status: StoredHunt["status"] }) {
   const config = {

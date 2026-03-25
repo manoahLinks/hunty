@@ -7,17 +7,9 @@ import picture from "@/public/static-images/image1.png";
 import { Skeleton } from "@/components/ui/skeleton";
 import { submitAnswer, AnswerIncorrectError } from "@/lib/contracts/hunt";
 import { resolveImageSrc, GATEWAY_COUNT } from "@/lib/ipfs";
+import type { HuntCard as Hunt } from "@/lib/types";
 
-export interface Hunt {
-  id: string | number;
-  title?: string;
-  description?: string;
-  link?: string;
-  code?: string;
-  image?: string;
-  hint?: string;
-  hintCost?: number;
-}
+export type { Hunt };
 
 interface HuntCardsProps {
   hunts: Hunt[]; // always an array of one item in active/preview mode

@@ -11,17 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import type { StoredHunt } from "@/lib/huntStore"
+import type { StoredHunt, ClueRow } from "@/lib/types"
 import { ActivateHuntModal } from "@/components/ActivateHuntModal"
 import { LeaderboardTable } from "@/components/LeaderBoardTable"
 import Link from "next/link"
-
-interface ClueRow {
-  id: number
-  question: string
-  answer: string
-  points: number
-}
 
 interface HuntDashboardProps {
   hunts: StoredHunt[]

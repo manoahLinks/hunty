@@ -14,17 +14,7 @@ import { get_clue_info, get_hunt } from "@/lib/contracts/hunt";
 import { HuntCards } from "./HuntCards";
 import Replay from "./icons/Replay";
 import Share from "./icons/Share";
-
-interface Hunt {
-  id: number;
-  title: string;
-  description: string;
-  link: string;
-  code: string;
-  points?: number;
-  hint?: string;
-  hintCost?: number;
-}
+import type { HuntCard as Hunt } from "@/lib/types";
 
 interface PlayGameProps {
   hunts: Hunt[];

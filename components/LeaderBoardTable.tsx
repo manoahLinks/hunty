@@ -4,22 +4,16 @@ import { ReactNode, useEffect, useState, useCallback } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { get_hunt_leaderboard } from "@/lib/contracts/hunt"
 import Medal from "@/components/icons/Medal"
-
-interface LeaderboardEntry {
-  position: number
-  name: string
-  points: number
-  icon: ReactNode
-}
+import type { LeaderboardDisplayEntry } from "@/lib/types"
 
 interface LeaderboardTableProps {
   huntId?: number
-  data?: LeaderboardEntry[]
+  data?: LeaderboardDisplayEntry[]
   isLoading?: boolean
 }
 
 export function LeaderboardTable({ huntId, data: initialData, isLoading: initialLoading = false }: LeaderboardTableProps) {
-  const [data, setData] = useState<LeaderboardEntry[]>(initialData || [])
+  const [data, setData] = useState<LeaderboardDisplayEntry[]>(initialData || [])
   const [isLoading, setIsLoading] = useState(initialLoading)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,7 +35,7 @@ export function LeaderboardTable({ huntId, data: initialData, isLoading: initial
       const sortedData = [...rawData].sort((a, b) => b.points - a.points)
 
       // Map to UI-friendly format (Requirement: Truncate wallet if no name)
-      const mappedData: LeaderboardEntry[] = sortedData.map((entry, index) => ({
+      const mappedData: LeaderboardDisplayEntry[] = sortedData.map((entry, index) => ({
         position: index + 1,
         name: entry.name || truncateAddress(entry.address),
         points: entry.points,

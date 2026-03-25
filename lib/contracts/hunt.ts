@@ -2,27 +2,9 @@ import Server, { TransactionBuilder, Networks, Operation } from "@stellar/stella
 import { getHunt as getStoredHunt, getHuntClues } from "@/lib/huntStore"
 import { parseStellarError } from "@/lib/stellarErrors"
 
-export type ClueInfo = {
-  id: number
-  question: string
-  points: number
-  hint?: string
-  hintCost?: number
-}
+import type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, ActivateHuntResult, AddClueResult, LeaderboardEntry } from "@/lib/types"
 
-export type HuntInfo = {
-  id: number
-  title: string
-  description: string
-  totalClues: number
-  status: string
-  creatorEmail?: string
-  emailNotifications?: boolean
-}
-
-export type CreateHuntResult = {
-  txHash: string
-}
+export type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, ActivateHuntResult, AddClueResult, LeaderboardEntry }
 
 /**
  * Thrown when the contract returns an AnswerIncorrect error for submit_answer.
@@ -74,12 +56,6 @@ function normalizeHuntFetchError(error: unknown, fallbackMessage: string): Error
 
   if (error instanceof Error) return error
   return new Error(fallbackMessage)
-}
-
-export type SubmitAnswerResult = {
-  txHash: string
-  /** The contract event emitted on success. */
-  event: "ClueCompleted"
 }
 
 // Soroban-friendly createHunt helper (testnet default).
@@ -189,10 +165,6 @@ export async function createHunt(
   return { txHash: res.hash }
 }
 
-export type ActivateHuntResult = {
-  txHash: string
-}
-
 /**
  * Calls the smart contract's activate_hunt(hunt_id: u64) to transition a hunt
  * from Draft to Active. Requires wallet and Soroban RPC.
@@ -253,10 +225,6 @@ export async function activateHunt(huntId: number): Promise<ActivateHuntResult> 
   const res = await server.submitTransaction(signedXdr)
   if (!res?.hash) throw new Error("Transaction submission failed")
   return { txHash: res.hash }
-}
-
-export type AddClueResult = {
-  txHash: string
 }
 
 /**
@@ -337,12 +305,6 @@ export async function addClue(
   const res2 = await server.submitTransaction(signedXdr)
   if (!res2?.hash) throw new Error("Transaction submission failed")
   return { txHash: res2.hash }
-}
-
-export type LeaderboardEntry = {
-  address: string
-  name?: string
-  points: number
 }
 
 /**

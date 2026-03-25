@@ -1,34 +1,9 @@
 import Server, { TransactionBuilder, Operation } from "@stellar/stellar-sdk"
 import { getSorobanNetworkPassphrase, getSorobanRpcUrl } from "../soroban/client"
 
-/**
- * Player progress data structure returned by the contract
- */
-export type PlayerProgress = {
-  hunt_id: number
-  player: string
-  current_clue_index: number
-  completed: boolean
-}
+import type { PlayerProgress, RegistrationStatus, RegistrationResult } from "@/lib/types"
 
-/**
- * Registration status information
- */
-export type RegistrationStatus = {
-  isRegistered: boolean
-  progressData?: PlayerProgress
-  loading: boolean
-  error?: string
-}
-
-/**
- * Result of a registration attempt
- */
-export type RegistrationResult = {
-  success: boolean
-  error?: string
-  transactionHash?: string
-}
+export type { PlayerProgress, RegistrationStatus, RegistrationResult }
 
 /**
  * Custom error for registration failures

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { checkRegistrationStatus, RegistrationStatus } from "@/lib/contracts/player-registration";
+import { checkRegistrationStatus } from "@/lib/contracts/player-registration";
+import type { RegistrationStatus } from "@/lib/types";
 import { RegistrationButton } from "@/components/RegistrationButton";
 import { Loader2 } from "lucide-react";
 

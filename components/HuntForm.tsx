@@ -11,28 +11,11 @@ import { withTransactionToast } from "@/lib/txToast"
 import { uploadToIPFS } from "@/lib/ipfs"
 import { toast } from "sonner"
 import { HuntCards } from "./HuntCards"
-
-interface Hunt {
-  id: number
-  title: string
-  description: string
-  link: string
-  code: string
-  image?: string
-}
-
-interface ClueRow {
-  id: number
-  question: string
-  answer: string
-  points: number
-  hint: string
-  hintCost: number
-}
+import type { HuntCard, ClueRow } from "@/lib/types"
 
 interface HuntFormProps {
-  hunt: Hunt
-  onUpdate: (field: keyof Hunt, value: string) => void
+  hunt: HuntCard
+  onUpdate: (field: string, value: string) => void
   onRemove: () => void
   huntId?: number
   onCluesSaved?: (count: number) => void
@@ -94,7 +77,7 @@ export function HuntForm({ hunt, onUpdate, onRemove, huntId, onCluesSaved }: Hun
       for (const row of valid) {
         const normalizedAnswer = row.answer.trim().toLowerCase()
         await withTransactionToast(
-          () => addClue(huntId, row.question.trim(), normalizedAnswer, row.points, row.hint.trim() || undefined, row.hintCost),
+          () => addClue(huntId, row.question.trim(), normalizedAnswer, row.points, row.hint?.trim() || undefined, row.hintCost),
           { loading: "Adding clue...", submitted: "Clue submitted", success: "" }
         )
         saveClueLocally({
@@ -102,7 +85,7 @@ export function HuntForm({ hunt, onUpdate, onRemove, huntId, onCluesSaved }: Hun
           question: row.question.trim(),
           answer: normalizedAnswer,
           points: row.points,
-          hint: row.hint.trim() || undefined,
+          hint: row.hint?.trim() || undefined,
           hintCost: row.hintCost,
         })
       }

@@ -1,16 +1,8 @@
 import { getAllHunts } from "@/lib/huntStore"
 
-export type ActivityEventType = "HuntCompleted" | "ClueCompleted"
+import type { ActivityEventType, ActivityEvent } from "@/lib/types"
 
-export interface ActivityEvent {
-  id: string
-  /** Full Stellar G-address of the participant */
-  address: string
-  huntTitle: string
-  huntId: number
-  timestamp: number
-  type: ActivityEventType
-}
+export type { ActivityEventType, ActivityEvent }
 
 /**
  * Anonymizes a Stellar public key for public display.

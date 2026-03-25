@@ -22,16 +22,16 @@ import { RewardsPanel } from "@/components/RewardsPanel"
 import { GamePreview } from "@/components/GamePreview"
 import { PublishModal } from "@/components/PublishModal"
 import ToggleButton from "@/components/ToggleButton"
-import { Reward } from "@/components/RewardsPanel"
+import type { Reward } from "@/lib/types"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 interface Hunt {
-  id: number;
-  title: string;
-  description: string;
-  link: string;
-  code: string;
-  image?: string;
+  id: number
+  title: string
+  description: string
+  link: string
+  code: string
+  image?: string
 }
 
 export default function CreateGame() {  
@@ -135,7 +135,7 @@ export default function CreateGame() {
     setRewards(rewards.filter((reward) => reward.place !== place));
   };
 
-  const updateHunt = (id: number, field: keyof Hunt, value: string) => {
+  const updateHunt = (id: number, field: string, value: string) => {
     setHunts(
       hunts.map((hunt) =>
         hunt.id === id ? { ...hunt, [field]: value } : hunt,

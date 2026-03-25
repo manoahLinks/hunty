@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
-import { getHunt, HuntStatus } from "@/lib/huntStore";
+import { getHunt } from "@/lib/huntStore";
+import type { HuntStatus } from "@/lib/types";
 import { formatTimestamp } from "@/lib/dateUtils";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";

@@ -9,7 +9,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { AlertTriangle, X, Loader2 } from "lucide-react"
-import { StoredHunt } from "@/lib/huntStore"
+import type { StoredHunt } from "@/lib/types"
 import Server, { TransactionBuilder, Networks, Operation } from "@stellar/stellar-sdk"
 
 async function cancelHuntOnChain(huntId: number): Promise<{ txHash: string }> {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { RegistrationStatus } from "@/lib/contracts/player-registration";
+import type { RegistrationStatus } from "@/lib/types";
 
 interface RegistrationButtonProps {
   huntId: number;

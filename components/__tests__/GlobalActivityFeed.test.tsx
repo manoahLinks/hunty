@@ -4,7 +4,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from "vitest"
 
 import { GlobalActivityFeed } from "../GlobalActivityFeed"
 import * as activityFeedModule from "@/lib/contracts/activityFeed"
-import type { ActivityEvent } from "@/lib/contracts/activityFeed"
+import type { ActivityEvent } from "@/lib/types"
 import { anonymizeAddress } from "@/lib/contracts/activityFeed"
 
 // ---------------------------------------------------------------------------
