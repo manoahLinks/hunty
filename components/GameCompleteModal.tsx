@@ -1,5 +1,8 @@
 "use client"
 
+import { useEffect } from "react"
+import confetti from "canvas-confetti"
+
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Coin from "@/components/icons/Coin"
@@ -21,6 +24,16 @@ export function GameCompleteModal({
   onViewLeaderboard,
   reward,
 }: GameCompleteModalProps) {
+  useEffect(() => {
+    if (isOpen) {
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md text-center">
