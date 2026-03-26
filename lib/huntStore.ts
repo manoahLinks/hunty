@@ -114,7 +114,7 @@ export function getCreatorHunts(): StoredHunt[] {
   return readHunts()
 }
 
-/** Get hunts by creator public key (mock implementation) */
+/** Get hunts for a creator (creator public-key filter not implemented yet; returns all hunts). */
 export function getHuntsByCreator(): StoredHunt[] {
   return readHunts()
 }
