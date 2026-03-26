@@ -440,7 +440,7 @@ export async function submitAnswer(
         localStorage.setItem(solvedKey, "true");
       }
     } catch (e) {
-      console.error("Failed to submit answer:", e)
+      console.error("Failed to update local clue state in localStorage after answer submission:", e)
     }
   }
 
