@@ -3,6 +3,7 @@
 import React from "react"
 import { render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { PlayGame } from "../PlayGame"
 import * as huntStore from "@/lib/huntStore"
@@ -29,6 +30,15 @@ vi.mock("@/components/PlayerProgressPanel", () => ({
   PlayerProgressPanel: () => <div data-testid="player-progress" />,
 }))
 
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  )
+}
+
 describe("PlayGame", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -39,7 +49,7 @@ describe("PlayGame", () => {
       throw new Error("Soroban RPC request timed out")
     })
 
-    render(
+    renderWithClient(
       <PlayGame
         hunts={[]}
         gameName="Hunty"
