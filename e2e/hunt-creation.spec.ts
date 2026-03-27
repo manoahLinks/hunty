@@ -83,4 +83,43 @@ test.describe("Hunt Creation", () => {
     const publishBtn = page.getByRole("button", { name: /publish game/i });
     await expect(publishBtn).toBeEnabled();
   });
+
+  test("completes full hunt creation pipeline", async ({ page }) => {
+    // 1. Navigate to Create Game
+    await page.goto("/hunty");
+
+    // 2. Create Tab: Fill clue details
+    await page.getByPlaceholder("Title of the Hunt").fill("Full Pipeline Test Hunt");
+    await page.getByPlaceholder("Description").fill("Ensuring the end-to-end flow works seamlessly.");
+    await page.getByPlaceholder("Enter Code to Unlock next challenge").fill("e2eflow");
+    
+    // Click Next to go to Rewards tab
+    await page.getByRole("button", { name: /next/i }).click();
+
+    // 3. Rewards Tab: Proceed to Publish
+    await page.getByRole("button", { name: /next/i }).click();
+
+    // 4. Publish Tab: Fill game name and dates
+    const nameInput = page.getByPlaceholder("Hunty");
+    await nameInput.clear();
+    await nameInput.fill("Automated E2E Hunt");
+
+    const today = new Date();
+    const startDate = today.toISOString().split("T")[0];
+    const futureDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    const dateInputs = page.locator('input[type="date"]');
+    await dateInputs.nth(0).fill(startDate);
+    await dateInputs.nth(1).fill(futureDate);
+
+    // Click "Publish Game" to open the confirmation modal
+    await page.getByRole("button", { name: /publish game/i }).click();
+
+    // 5. Confirmation Modal: Confirm creation
+    const modalPublishBtn = page.getByRole("dialog").getByRole("button", { name: "Publish", exact: true });
+    await modalPublishBtn.click();
+
+    // 6. Assertion: Wait for redirect to the /hunts page
+    await expect(page).toHaveURL(/\/hunts/);
+  });
 });

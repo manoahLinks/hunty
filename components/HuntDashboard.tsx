@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Trash2, Trophy } from "lucide-react"
+import { Plus, Trash2, Trophy, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import type { StoredHunt, ClueRow } from "@/lib/types"
 import { ActivateHuntModal } from "@/components/ActivateHuntModal"
 import { LeaderboardTable } from "@/components/LeaderBoardTable"
 import Link from "next/link"
+import { toast } from "sonner"
 
 interface HuntDashboardProps {
   hunts: StoredHunt[]
@@ -48,6 +49,13 @@ export function HuntDashboard({ hunts, onActivate, onRefresh, onSaveClues }: Hun
     { id: 1, question: "", answer: "", points: 10 },
   ])
   const [isSavingClues, setIsSavingClues] = useState(false)
+
+  const handleCopyId = (e: React.MouseEvent, id: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    navigator.clipboard.writeText(id.toString())
+    toast.success("Copied Hunt ID to clipboard!")
+  }
 
   const handleActivateClick = (hunt: StoredHunt) => {
     setModalHunt(hunt)
@@ -120,7 +128,15 @@ export function HuntDashboard({ hunts, onActivate, onRefresh, onSaveClues }: Hun
               <Link href={`/hunt/${hunt.id}`}>
               <div className="p-5">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <CardTitle className="line-clamp-2 text-lg">{hunt.title}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="line-clamp-2 text-lg">{hunt.title}</CardTitle>
+                    <div className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md text-xs text-slate-500 font-mono">
+                      #{hunt.id}
+                      <button onClick={(e) => handleCopyId(e, hunt.id)} className="hover:text-slate-800 transition-colors">
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
                   <StatusBadge status={hunt.status} />
                 </div>
                 <CardDescription className="mb-4 line-clamp-3 text-sm text-slate-600">
