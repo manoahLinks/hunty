@@ -6,6 +6,7 @@ import Trash from "@/components/icons/trash"
 import Coin from "@/components/icons/Coin"
 import { useState } from "react"
 import type { Reward, RewardPlayerProgress } from "@/lib/types"
+import { claimReward } from "@/lib/contracts/rewardManager"
 
 export type { Reward, RewardPlayerProgress as PlayerProgress }
 
@@ -29,8 +30,14 @@ export function RewardsPanel({ rewards, onUpdateReward, onAddReward, onDeleteRew
       if (onClaimReward) {
         await onClaimReward(playerProgress?.hunt_id);
       } else {
-        // Simulate network/contract call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (playerProgress?.hunt_id == null) {
+          throw new Error("Missing hunt_id for reward claim")
+        }
+        const parsed = Number(playerProgress.hunt_id)
+        if (Number.isNaN(parsed)) {
+          throw new Error("Invalid hunt_id for reward claim")
+        }
+        await claimReward(parsed)
       }
       setClaimed(true);
     } catch (e) {

@@ -11,7 +11,9 @@ test.describe("Core Game Loop: Create → Join → Solve → Complete", () => {
     await page.goto("/");
 
     // The seeded "E2E Test Hunt" (status: Active) should appear
-    await expect(page.getByText("E2E Test Hunt")).toBeVisible();
+    await expect(
+      page.locator('[data-slot="card-title"]').filter({ hasText: "E2E Test Hunt" }).first()
+    ).toBeVisible();
     // Draft hunts should NOT appear on the home page (only Active hunts shown)
     await expect(page.locator('[data-slot="card-title"]').filter({ hasText: "Draft Hunt" })).toHaveCount(0);
   });

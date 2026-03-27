@@ -24,6 +24,8 @@ export interface StoredHunt {
   emailNotifications?: boolean
   /** When true, the hunt is hidden from the public arcade grid. */
   is_private?: boolean
+  /** Optional game cover CID/URL for hunt cards and sharing previews. */
+  coverImageCid?: string
 }
 
 export type HuntInfo = {

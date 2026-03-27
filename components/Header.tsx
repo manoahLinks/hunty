@@ -11,7 +11,7 @@ import { ThemeToggle } from "./ThemeToggle";
 
 export function Header({ balance = "0" }: { balance?: string }) {
   const mounted = useIsMounted();
-  const { connected, displayKey, publicKey, connect, disconnect } =
+  const { connected, displayKey, publicKey, connect, disconnect, walletProvider } =
     useFreighterWallet();
   const [modalOpen, setModalOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -105,6 +105,9 @@ export function Header({ balance = "0" }: { balance?: string }) {
                     <p className="text-xs text-blue-200 font-medium mb-1">
                       Connected wallet
                     </p>
+                    <p className="text-[11px] uppercase tracking-wide text-blue-200/90 mb-1">
+                      {walletProvider ?? "freighter"}
+                    </p>
                     <p className="text-white font-mono text-xs break-all leading-relaxed">
                       {publicKey}
                     </p>
@@ -152,7 +155,7 @@ export function Header({ balance = "0" }: { balance?: string }) {
       <WalletModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onConnect={connect}
+        onConnect={(provider) => connect(provider)}
       />
     </>
   );
