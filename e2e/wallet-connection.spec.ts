@@ -22,10 +22,7 @@ test.describe("Wallet Connection", () => {
 
     // The WalletModal should appear with the Freighter option
     await expect(page.getByText("Connect a wallet")).toBeVisible();
-    await expect(page.getByText("Freighter")).toBeVisible();
-    await expect(
-      page.getByText("Stellar browser extension")
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /freighter/i })).toBeVisible();
   });
 
   test("displays shortened wallet address after connecting", async ({

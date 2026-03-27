@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -9,6 +9,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { z } from "zod"
 import { createHunt } from "@/lib/contracts/hunt"
 import { withTransactionToast } from "@/lib/txToast"
+import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from "@/lib/huntStore"
 
 import { dynapuff } from "@/lib/font"
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,8 @@ import { PublishModal } from "@/components/PublishModal"
 import ToggleButton from "@/components/ToggleButton"
 import type { Reward } from "@/lib/types"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { toast } from "sonner"
+import { downloadElementAsImage } from "@/lib/downloadAsImage"
 
 interface Hunt {
   id: number
@@ -49,6 +52,7 @@ export default function CreateGame() {
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [isPrivate, setIsPrivate] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
 
@@ -181,9 +185,7 @@ export default function CreateGame() {
         .map((h) => `${h.title}: ${h.description}`)
         .join("\n");
       // Use the first hunt's image CID (if uploaded to IPFS) as the game cover.
-      const coverImageCid = hunts[0]?.image?.startsWith("ipfs://")
-        ? hunts[0].image
-        : undefined;
+      const coverImageCid = hunts[0]?.image?.trim() || undefined;
 
       await withTransactionToast(
         async (setStage) => {
@@ -207,6 +209,24 @@ export default function CreateGame() {
         },
       );
 
+      const existing = getAllHuntsIncludingPrivate()
+      const localId =
+        existing.length > 0 ? Math.max(...existing.map((h) => h.id)) + 1 : 1
+      addStoredHunt({
+        id: localId,
+        title: gameName,
+        description,
+        cluesCount: hunts.length,
+        status: "Draft",
+        rewardType: rewards.length > 1 ? "Both" : "XLM",
+        startTime: start_time,
+        endTime: end_time,
+        creatorEmail: creatorEmail || undefined,
+        emailNotifications,
+        is_private: isPrivate,
+        coverImageCid,
+      })
+
       setShowPublishModal(false);
       router.push("/hunts");
     } catch (error) {
@@ -222,6 +242,23 @@ export default function CreateGame() {
       // You could add a toast here if you have a toast system
     }
   };
+
+  const handleDownloadImage = async () => {
+    if (!previewContainerRef.current) {
+      toast.error("Preview not available yet. Try again in a second.")
+      return
+    }
+
+    try {
+      await downloadElementAsImage(previewContainerRef.current, {
+        filename: `${gameName || "hunty"}.png`,
+      })
+      toast.success("Preview downloaded.")
+    } catch (error) {
+      console.error("Failed to download image:", error)
+      toast.error("Could not download image.")
+    }
+  }
 
   return (
     <TooltipProvider>
@@ -520,7 +557,7 @@ export default function CreateGame() {
                         <div className="flex gap-2">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2">
+                              <Button onClick={handleDownloadImage} className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2">
                                 <Download className="w-4 h-4 " />
                                 Download
                               </Button>
@@ -571,7 +608,7 @@ export default function CreateGame() {
               </div>
             </div>
             {/* Right Panel - Live Preview */}
-              <div className="hidden lg:block">
+              <div ref={previewContainerRef} className="hidden lg:block">
                 <GamePreview hunts={hunts} />
               </div>
             </div>

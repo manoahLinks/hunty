@@ -17,6 +17,7 @@ import { hankenGrotesk } from "@/lib/font"
 import OnboardingTour from "@/components/OnboardingTour"
 import { GlobalActivityFeed } from "@/components/GlobalActivityFeed"
 import { FeaturedHunts } from "@/components/FeaturedHunts"
+import { HuntCoverImage } from "@/components/HuntCoverImage"
 
 interface WalletOption {
   id: string
@@ -294,6 +295,11 @@ export default function GameArcade() {
                   key={hunt.id}
                   className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow"
                 >
+                  <HuntCoverImage
+                    src={hunt.coverImageCid}
+                    alt={`${hunt.title} cover`}
+                    className="relative w-full h-40 bg-slate-100"
+                  />
                   <div className="p-5">
                     <CardTitle className="text-lg font-semibold mb-2 line-clamp-2 dark:text-slate-100">
                       {hunt.title}

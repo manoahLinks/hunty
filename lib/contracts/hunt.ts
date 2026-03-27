@@ -2,6 +2,7 @@ import Server, { TransactionBuilder, Operation } from "@stellar/stellar-sdk"
 import { getHunt as getStoredHunt, getHuntClues } from "@/lib/huntStore"
 import { parseStellarError } from "@/lib/stellarErrors"
 import { SOROBAN_RPC_URL, NETWORK_PASSPHRASE } from "./config"
+import { getActiveWalletAdapter } from "@/lib/walletAdapter"
 
 import type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, ActivateHuntResult, AddClueResult, LeaderboardEntry } from "@/lib/types"
 
@@ -80,18 +81,7 @@ export async function createHunt(
   if (typeof window === "undefined") throw new Error("Browser environment required")
 
   const server = new Server(SOROBAN_RPC_URL)
-
-  const anyWin = window as Window & {
-    freighter?: unknown
-    soroban?: unknown
-    sorobanWallet?: unknown
-  }
-  const wallet = anyWin.freighter || anyWin.soroban || anyWin.sorobanWallet
-  if (!wallet) {
-    throw new Error(
-      "No Soroban-compatible wallet detected (install Freighter or Soroban Wallet)."
-    )
-  }
+  const wallet = getActiveWalletAdapter()
 
   // Prepare the payload and encode as string (manageData value must be string/buffer)
   const payload = JSON.stringify({
@@ -107,27 +97,7 @@ export async function createHunt(
     ...(is_private ? { is_private: true } : {}),
   })
 
-  // Ask the wallet for the public key. Different wallets expose slightly
-  // different APIs; we try common ones (Freighter, Soroban wallet adapter).
-  let publicKey: string | undefined
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((wallet as any).getPublicKey) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    publicKey = await (wallet as any).getPublicKey()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } else if ((wallet as any).request && typeof (wallet as any).request === "function") {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const resp = await (wallet as any).request({ method: "getPublicKey" })
-      publicKey = resp
-    } catch {
-      // ignore
-    }
-  }
-
-  if (!publicKey) {
-    throw new Error("Unable to obtain public key from wallet; ensure you are connected.")
-  }
+  const publicKey = await wallet.getPublicKey()
 
   // Load account state
   const account = await server.getAccount(publicKey)
@@ -148,18 +118,7 @@ export async function createHunt(
 
   // Wallet signing: errors (including user rejection) are intentionally allowed
   // to propagate so withTransactionToast can classify and display them.
-  let signedXdr: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((wallet as any).signTransaction) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    signedXdr = await (wallet as any).signTransaction(tx.toXDR())
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } else if ((wallet as any).request && typeof (wallet as any).request === "function") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    signedXdr = await (wallet as any).request({ method: "signTransaction", params: { tx: tx.toXDR() } })
-  } else {
-    throw new Error("No signing method available. Install Freighter or Soroban Wallet.")
-  }
+  const signedXdr = await wallet.signTransaction(tx.toXDR())
 
   // Submit signed transaction XDR to RPC
   const res = await server.submitTransaction(signedXdr)
@@ -176,30 +135,8 @@ export async function activateHunt(huntId: number): Promise<ActivateHuntResult> 
   if (typeof window === "undefined") throw new Error("Browser environment required")
 
   const server = new Server(SOROBAN_RPC_URL)
-
-  const win = window as Window & { freighter?: unknown; soroban?: unknown; sorobanWallet?: unknown }
-  const wallet = win.freighter ?? win.soroban ?? win.sorobanWallet
-  if (!wallet) {
-    throw new Error(
-      "No Soroban-compatible wallet detected (install Freighter or Soroban Wallet)."
-    )
-  }
-
-  let publicKey: string | undefined
-  const w = wallet as { getPublicKey?: () => Promise<string>; request?: (arg: { method: string }) => Promise<string> }
-  if (w.getPublicKey) {
-    publicKey = await w.getPublicKey()
-  } else if (typeof w.request === "function") {
-    try {
-      publicKey = await w.request({ method: "getPublicKey" })
-    } catch {
-      // ignore
-    }
-  }
-
-  if (!publicKey) {
-    throw new Error("Unable to obtain public key from wallet; ensure you are connected.")
-  }
+  const wallet = getActiveWalletAdapter()
+  const publicKey = await wallet.getPublicKey()
 
   const account = await server.getAccount(publicKey)
   const payload = JSON.stringify({ action: "activate_hunt", hunt_id: huntId })
@@ -214,15 +151,7 @@ export async function activateHunt(huntId: number): Promise<ActivateHuntResult> 
     .setTimeout(180)
     .build()
 
-  const signWallet = wallet as { signTransaction?: (xdr: string) => Promise<string>; request?: (arg: { method: string; params?: { tx: string } }) => Promise<string> }
-  let signedXdr: string
-  if (signWallet.signTransaction) {
-    signedXdr = await signWallet.signTransaction(tx.toXDR())
-  } else if (typeof signWallet.request === "function") {
-    signedXdr = await signWallet.request({ method: "signTransaction", params: { tx: tx.toXDR() } })
-  } else {
-    throw new Error("No signing method available. Install Freighter or Soroban Wallet.")
-  }
+  const signedXdr = await wallet.signTransaction(tx.toXDR())
 
   const res = await server.submitTransaction(signedXdr)
   if (!res?.hash) throw new Error("Transaction submission failed")
@@ -244,28 +173,8 @@ export async function addClue(
   if (typeof window === "undefined") throw new Error("Browser environment required")
 
   const server = new Server(SOROBAN_RPC_URL)
-
-  const win = window as Window & { freighter?: unknown; soroban?: unknown; sorobanWallet?: unknown }
-  const wallet = win.freighter ?? win.soroban ?? win.sorobanWallet
-  if (!wallet) {
-    throw new Error("No Soroban-compatible wallet detected (install Freighter or Soroban Wallet).")
-  }
-
-  let publicKey: string | undefined
-  const w = wallet as { getPublicKey?: () => Promise<string>; request?: (arg: { method: string }) => Promise<string> }
-  if (w.getPublicKey) {
-    publicKey = await w.getPublicKey()
-  } else if (typeof w.request === "function") {
-    try {
-      publicKey = await w.request({ method: "getPublicKey" })
-    } catch {
-      // ignore
-    }
-  }
-
-  if (!publicKey) {
-    throw new Error("Unable to obtain public key from wallet; ensure you are connected.")
-  }
+  const wallet = getActiveWalletAdapter()
+  const publicKey = await wallet.getPublicKey()
 
   const normalizedAnswer = answer.trim().toLowerCase()
 
@@ -290,18 +199,7 @@ export async function addClue(
     .setTimeout(180)
     .build()
 
-  const signWallet = wallet as {
-    signTransaction?: (xdr: string) => Promise<string>
-    request?: (arg: { method: string; params?: { tx: string } }) => Promise<string>
-  }
-  let signedXdr: string
-  if (signWallet.signTransaction) {
-    signedXdr = await signWallet.signTransaction(tx.toXDR())
-  } else if (typeof signWallet.request === "function") {
-    signedXdr = await signWallet.request({ method: "signTransaction", params: { tx: tx.toXDR() } })
-  } else {
-    throw new Error("No signing method available. Install Freighter or Soroban Wallet.")
-  }
+  const signedXdr = await wallet.signTransaction(tx.toXDR())
 
   const res2 = await server.submitTransaction(signedXdr)
   if (!res2?.hash) throw new Error("Transaction submission failed")

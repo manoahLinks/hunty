@@ -5,6 +5,7 @@ import { getFeaturedHunts } from "@/lib/huntStore"
 import { Trophy, Clock, Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { HuntCoverImage } from "@/components/HuntCoverImage"
 
 function timeRemaining(endTime?: number): string {
   if (!endTime) return ""
@@ -67,6 +68,11 @@ export function FeaturedHunts() {
                 <h3 className="text-lg font-bold text-slate-900 mb-1 pr-16 line-clamp-1">
                   {hunt.title}
                 </h3>
+                <HuntCoverImage
+                  src={hunt.coverImageCid}
+                  alt={`${hunt.title} cover`}
+                  className="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-slate-100"
+                />
 
                 <p className="text-sm text-slate-600 mb-4 line-clamp-2 flex-1">
                   {hunt.description}
