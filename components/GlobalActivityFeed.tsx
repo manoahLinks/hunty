@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react"
 import { Trophy, CheckCircle2, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { toast } from "sonner"
 import {
   type ActivityEvent,
   anonymizeAddress,
@@ -105,12 +106,30 @@ export function GlobalActivityFeed({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isMountedRef = useRef(false)
+  const previousEventIdsRef = useRef<Set<string>>(new Set())
+  const hasRenderedRef = useRef(false)
 
   async function fetchActivity() {
     try {
       const data = await getRecentActivity(limit)
+
       if (isMountedRef.current) {
+        const existingIds = previousEventIdsRef.current
+        const newEvents = data.filter((evt) => !existingIds.has(evt.id))
+
+        if (hasRenderedRef.current) {
+          newEvents
+            .filter((evt) => evt.type === "HuntCompleted")
+            .forEach((evt) => {
+              toast.success(
+                `${anonymizeAddress(evt.address)} completed ${evt.huntTitle}!`,
+                { duration: 4000 },
+              )
+            })
+        }
+
         setEvents(data)
+        previousEventIdsRef.current = new Set(data.map((evt) => evt.id))
         setError(null)
       }
     } catch (err) {
@@ -122,6 +141,7 @@ export function GlobalActivityFeed({
     } finally {
       if (isMountedRef.current) {
         setLoading(false)
+        hasRenderedRef.current = true
       }
     }
   }

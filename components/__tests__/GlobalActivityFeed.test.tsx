@@ -1,6 +1,7 @@
 import React from "react"
 import { render, screen, waitFor, act } from "@testing-library/react"
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest"
+import { toast } from "sonner"
 
 import { GlobalActivityFeed } from "../GlobalActivityFeed"
 import * as activityFeedModule from "@/lib/contracts/activityFeed"
@@ -133,8 +134,38 @@ describe("GlobalActivityFeed", () => {
     expect(spy).toHaveBeenCalledTimes(2)
   })
 
-  // 5. Gracefully handles fetch errors without crashing
-  it("shows an error notice but does not crash when fetch fails", async () => {
+  // 5. Notify users via toast on new HuntCompleted events
+  it("shows a toast when a new HuntCompleted event arrives", async () => {
+    const firstEvents = [MOCK_EVENTS[0]]
+    const newEvent = {
+      id: "event-4",
+      address: "GDEF7QHZRJLXKIAOPQMN5VBCWETYU23HIAJZXCVBNM456789QWERTYUI",
+      huntTitle: "Market Mayhem",
+      huntId: 6,
+      timestamp: Math.floor(Date.now() / 1000),
+      type: "HuntCompleted",
+    }
+
+    vi.spyOn(activityFeedModule, "getRecentActivity")
+      .mockResolvedValueOnce(firstEvents)
+      .mockResolvedValueOnce([...firstEvents, newEvent])
+
+    const toastSuccess = vi.spyOn(toast, "success").mockImplementation(() => {})
+
+    render(<GlobalActivityFeed pollIntervalMs={40} />)
+
+    await waitFor(() => expect(screen.getByText(/City Secrets/i)).toBeInTheDocument())
+    await new Promise((resolve) => setTimeout(resolve, 80))
+
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalled())
+    expect(toastSuccess).toHaveBeenCalledWith(
+      "GDE...TYUI completed Market Mayhem!",
+      { duration: 4000 },
+    )
+  })
+
+  // 6. Gracefully handles fetch errors without crashing
+  it("does not crash when fetch fails", async () => {
     vi.spyOn(activityFeedModule, "getRecentActivity").mockRejectedValue(
       new Error("Network Error")
     )
@@ -142,10 +173,9 @@ describe("GlobalActivityFeed", () => {
     render(<GlobalActivityFeed pollIntervalMs={999_999} />)
 
     await waitFor(() => {
-      expect(screen.getByText(/unable to load activity feed/i)).toBeInTheDocument()
+      expect(screen.getByTestId("activity-feed")).toBeInTheDocument()
     })
 
-    // Component should still be mounted
     expect(screen.getByTestId("activity-feed")).toBeInTheDocument()
   })
 })

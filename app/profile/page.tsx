@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Image from "next/image"
 import { formatISOString } from "@/lib/dateUtils"
 
 import { Header } from "@/components/Header"
@@ -23,6 +24,14 @@ interface PlayerHuntProgress {
 
 // Temporary data fetcher; replace with real Soroban/indexer integration calling
 // `get_player_progress` for the connected player's address.
+interface NftReward {
+  id: number
+  name: string
+  imageUri: string
+  earnedAt: string
+  claimed: boolean
+}
+
 async function fetchPlayerHunts(address: string): Promise<PlayerHuntProgress[]> {
   // In a real implementation this would:
   // 1. Fetch all hunts from your indexer or contract.
@@ -65,9 +74,32 @@ async function fetchPlayerHunts(address: string): Promise<PlayerHuntProgress[]> 
   ]
 }
 
+async function fetchPlayerRewards(address: string): Promise<NftReward[]> {
+  if (!address) return []
+
+  return [
+    {
+      id: 1,
+      name: "Golden Compass",
+      imageUri: "/static-images/nft1.png",
+      earnedAt: "2026-02-10T15:16:00Z",
+      claimed: true,
+    },
+    {
+      id: 2,
+      name: "Explorer Trophy",
+      imageUri: "/static-images/nft2.png",
+      earnedAt: "2026-02-20T11:26:00Z",
+      claimed: false,
+    },
+  ]
+}
+
+
 export default function UserProfilePage() {
   const { connected, publicKey } = useFreighterWallet()
   const [hunts, setHunts] = useState<PlayerHuntProgress[]>([])
+  const [nftRewards, setNftRewards] = useState<NftReward[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -98,7 +130,19 @@ export default function UserProfilePage() {
       }
     }
 
+    const loadRewards = async () => {
+      try {
+        const rewardsData = await fetchPlayerRewards(publicKey!)
+        if (!cancelled) {
+          setNftRewards(rewardsData)
+        }
+      } catch (err) {
+        console.error("Failed to load NFT rewards:", err)
+      }
+    }
+
     load()
+    loadRewards()
 
     return () => {
       cancelled = true
@@ -127,8 +171,11 @@ export default function UserProfilePage() {
       inProgressHunts,
       totalPoints,
       completionRate,
+      totalNftRewards: nftRewards.length,
+      claimedNftRewards: nftRewards.filter((nft) => nft.claimed).length,
+      unclaimedNftRewards: nftRewards.filter((nft) => !nft.claimed).length,
     }
-  }, [hunts])
+  }, [hunts, nftRewards])
 
   const completedHunts = hunts.filter((h) => h.status === "Completed")
   const inProgressHunts = hunts.filter((h) => h.status === "In-Progress")
@@ -194,12 +241,50 @@ export default function UserProfilePage() {
                       valueClassName="text-emerald-600"
                     />
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                    <StatPill label="NFT Rewards" value={summary.totalNftRewards} />
+                    <StatPill label="NFTs Claimed" value={summary.claimedNftRewards} />
+                    <StatPill label="NFTs Unclaimed" value={summary.unclaimedNftRewards} />
+                  </div>
                   <div className="mt-4 text-sm text-slate-600">
                     Completion rate:{" "}
                     <span className="font-semibold text-slate-800">{summary.completionRate}%</span>
                   </div>
                 </CardContent>
               </Card>
+            </section>
+
+            <section aria-label="NFT Rewards" className="mt-8">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h2 className="text-xl md:text-2xl font-semibold bg-linear-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent">
+                  NFT Rewards
+                </h2>
+                <span className="text-sm text-slate-500">Earned: {nftRewards.length}</span>
+              </div>
+              {nftRewards.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 py-8 text-center text-slate-600">
+                  No NFT rewards earned yet. Complete more hunts to unlock collectible badges.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {nftRewards.map((nft) => (
+                    <Card key={nft.id} className="border border-slate-200 bg-white/80">
+                      <CardHeader>
+                        <CardTitle className="text-sm font-semibold text-slate-900">{nft.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="aspect-square w-full rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
+                          <Image src={nft.imageUri} alt={nft.name} width={80} height={80} />
+                        </div>
+                        <p className="text-xs text-slate-500">Earned on {formatISOString(nft.earnedAt)}</p>
+                        <span className={`px-2 py-1 text-[11px] rounded-full ${nft.claimed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                          {nft.claimed ? "Claimed" : "Unclaimed"}
+                        </span>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </section>
 
             <section aria-label="Hunt history" className="mt-10 space-y-8">

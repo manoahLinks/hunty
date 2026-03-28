@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 import { z } from "zod"
 import { createHunt } from "@/lib/contracts/hunt"
@@ -76,25 +78,41 @@ export default function CreateGame() {
     }
   }, []);
 
-  const rewardPool = rewards.reduce((sum, r) => sum + r.amount, 0);
+  const rewardPool = rewards.reduce((sum, r) => sum + r.amount, 0)
+
+  const huntItemSchema = z.object({
+    id: z.number(),
+    title: z.string().min(4, "Clue title must be at least 4 characters."),
+    description: z.string().min(8, "Clue description must be at least 8 characters."),
+    link: z.string().optional().or(z.literal("")),
+    code: z.string().optional().or(z.literal("")),
+    image: z.string().optional().or(z.literal("")),
+  })
+
+  const rewardItemSchema = z.object({
+    place: z.number().int().positive(),
+    amount: z.number().positive("Reward amount must be greater than 0."),
+    icon: z.any().optional(),
+  })
 
   const formSchema = z
     .object({
-      title: z.string().min(4, "Title length must be > 3 chars."),
-      startDate: z
-        .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid or empty start date."),
-      endDate: z
-        .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid or empty end date."),
-      rewardPool: z.number().min(0, "Reward Pool must be >= 0."),
+      gameName: z.string().min(4, "Title length must be > 3 chars."),
+      startDate: z.string().min(1, "Start date is required."),
+      endDate: z.string().min(1, "End date is required."),
+      creatorEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
+      emailNotifications: z.boolean(),
+      timerEnabled: z.boolean(),
+      isPrivate: z.boolean(),
+      hunts: z.array(huntItemSchema).min(3, "At least 3 clues are required."),
+      rewards: z.array(rewardItemSchema).min(1, "At least one reward slot is required."),
     })
     .refine(
       (data) => {
-        const s = new Date(data.startDate);
-        const e = new Date(data.endDate);
-        if (!isNaN(s.getTime()) && !isNaN(e.getTime())) return s < e;
-        return true;
+        const s = new Date(data.startDate)
+        const e = new Date(data.endDate)
+        if (!isNaN(s.getTime()) && !isNaN(e.getTime())) return s < e
+        return false
       },
       {
         message: "Start Date must be before End Date.",
@@ -103,27 +121,73 @@ export default function CreateGame() {
     )
     .refine(
       (data) => {
-        const e = new Date(data.endDate);
-        if (!isNaN(e.getTime())) return e > new Date();
-        return true;
+        const e = new Date(data.endDate)
+        if (!isNaN(e.getTime())) return e.getTime() > Date.now()
+        return false
       },
       {
         message: "End Date must be in the future.",
         path: ["endDate"],
       },
-    );
+    )
+    .refine(
+      (data) => data.rewards.reduce((sum, reward) => sum + reward.amount, 0) > 0,
+      {
+        message: "Reward pool must be greater than 0 and based on reward buckets.",
+        path: ["rewards"],
+      },
+    )
 
-  const validationResult = formSchema.safeParse({
-    title: gameName,
+  type HuntCreationFormValues = z.infer<typeof formSchema>
+
+  const {
+    handleSubmit,
+    setValue,
+    trigger,
+    formState: { errors, isValid },
+  } = useForm<HuntCreationFormValues>({
+    resolver: zodResolver(formSchema),
+    mode: "all",
+    defaultValues: {
+      gameName,
+      startDate,
+      endDate,
+      creatorEmail,
+      emailNotifications,
+      timerEnabled,
+      isPrivate,
+      hunts,
+      rewards,
+    },
+  })
+
+  useEffect(() => {
+    setValue("gameName", gameName)
+    setValue("startDate", startDate)
+    setValue("endDate", endDate)
+    setValue("creatorEmail", creatorEmail)
+    setValue("emailNotifications", emailNotifications)
+    setValue("timerEnabled", timerEnabled)
+    setValue("isPrivate", isPrivate)
+    setValue("hunts", hunts)
+    setValue("rewards", rewards)
+    void trigger()
+  }, [
+    gameName,
     startDate,
     endDate,
+    creatorEmail,
+    emailNotifications,
+    timerEnabled,
+    isPrivate,
+    hunts,
+    rewards,
     rewardPool,
-  });
+    setValue,
+    trigger,
+  ])
 
-  const errors = validationResult.success
-    ? {}
-    : validationResult.error.flatten().fieldErrors;
-  const isFormValid = validationResult.success;
+  const isFormValidated = isValid
 
   const addReward = () => {
     setRewards([
@@ -170,36 +234,32 @@ export default function CreateGame() {
     );
   };
 
-  const handlePublish = async () => {
-    setIsPublishing(true);
-    try {
-      const start_time = Math.floor(Date.now() / 1000);
-      let endMs = Date.now() + 60 * 60 * 1000;
-      if (endDate) {
-        const parsed = new Date(endDate);
-        if (!isNaN(parsed.getTime())) endMs = parsed.getTime();
-      }
-      const end_time = Math.floor(endMs / 1000);
+  const handlePublish = async (formValues: z.infer<typeof formSchema>) => {
+    if (!isFormValidated) {
+      toast.error("Please fix validation issues before publishing the hunt.")
+      return
+    }
 
-      const description = hunts
-        .map((h) => `${h.title}: ${h.description}`)
-        .join("\n");
-      // Use the first hunt's image CID (if uploaded to IPFS) as the game cover.
-      const coverImageCid = hunts[0]?.image?.trim() || undefined;
+    setIsPublishing(true)
+    try {
+      const start_time = Math.floor(new Date(formValues.startDate).getTime() / 1000)
+      const end_time = Math.floor(new Date(formValues.endDate).getTime() / 1000)
+      const description = formValues.hunts.map((h) => `${h.title}: ${h.description}`).join("\n")
+      const coverImageCid = formValues.hunts[0]?.image?.trim() || undefined
 
       await withTransactionToast(
         async (setStage) => {
           setStage("approving")
           return createHunt(
             "",
-            gameName,
+            formValues.gameName,
             description,
             start_time,
             end_time,
             coverImageCid,
-            creatorEmail,
-            emailNotifications,
-            isPrivate,
+            formValues.creatorEmail,
+            formValues.emailNotifications,
+            formValues.isPrivate,
           )
         },
         {
@@ -214,16 +274,16 @@ export default function CreateGame() {
         existing.length > 0 ? Math.max(...existing.map((h) => h.id)) + 1 : 1
       addStoredHunt({
         id: localId,
-        title: gameName,
+        title: formValues.gameName,
         description,
-        cluesCount: hunts.length,
+        cluesCount: formValues.hunts.length,
         status: "Draft",
-        rewardType: rewards.length > 1 ? "Both" : "XLM",
+        rewardType: formValues.rewards.length > 1 ? "Both" : "XLM",
         startTime: start_time,
         endTime: end_time,
-        creatorEmail: creatorEmail || undefined,
-        emailNotifications,
-        is_private: isPrivate,
+        creatorEmail: formValues.creatorEmail || undefined,
+        emailNotifications: formValues.emailNotifications,
+        is_private: formValues.isPrivate,
         coverImageCid,
       })
 
@@ -496,6 +556,16 @@ export default function CreateGame() {
                             )}
                           </div>
                         </div>
+                        {errors.hunts && (
+                          <div className="text-red-500 text-sm">
+                            {errors.hunts.message || "At least 3 clues are required."}
+                          </div>
+                        )}
+                        {errors.rewards && (
+                          <div className="text-red-500 text-sm">
+                            {errors.rewards.message || "At least one reward is required."}
+                          </div>
+                        )}
 
                         <div className="flex items-center justify-between">
                           <label className="block text-xl font-normal text-[#808080]">Email Notifications</label>
@@ -592,8 +662,14 @@ export default function CreateGame() {
                           Previous
                         </Button>
                         <Button
-                          onClick={() => setShowPublishModal(true)}
-                          disabled={!isFormValid || isPublishing}
+                          onClick={() => {
+                            if (!isFormValidated) {
+                              toast.error("Please fill all required hunt details before publishing.")
+                              return
+                            }
+                            setShowPublishModal(true)
+                          }}
+                          disabled={!isFormValidated || isPublishing}
                           className="bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl px-6 py-3 rounded-lg flex items-center gap-2"
                         >
                           <span>
@@ -619,7 +695,7 @@ export default function CreateGame() {
       <PublishModal
         isOpen={showPublishModal}
         onClose={() => setShowPublishModal(false)}
-        onPublish={handlePublish}
+        onPublish={handleSubmit(handlePublish)}
         gameName={gameName}
       />
       <QrCodeModal open={qrOpen} onClose={() => setQrOpen(false)} url={typeof window !== "undefined" ? window.location.href : ""} />
