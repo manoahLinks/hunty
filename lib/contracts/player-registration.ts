@@ -1,19 +1,14 @@
 import Server, { TransactionBuilder, Operation } from "@stellar/stellar-sdk"
 import { getSorobanNetworkPassphrase, getSorobanRpcUrl } from "../soroban/client"
+import { RegistrationError } from "@/lib/contracts/errors"
 
 import type { PlayerProgress, RegistrationStatus, RegistrationResult } from "@/lib/types"
 
 export type { PlayerProgress, RegistrationStatus, RegistrationResult }
 
-/**
- * Custom error for registration failures
- */
-export class RegistrationError extends Error {
-  constructor(message: string, public readonly code?: string) {
-    super(message)
-    this.name = "RegistrationError"
-  }
-}
+// RegistrationError is re-exported from the central errors module for
+// backwards-compatible imports.
+export { RegistrationError }
 
 /**
  * Retry configuration for network operations

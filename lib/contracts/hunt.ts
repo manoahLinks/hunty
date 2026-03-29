@@ -8,57 +8,9 @@ import type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, Activate
 
 export type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, ActivateHuntResult, AddClueResult, LeaderboardEntry }
 
-/**
- * Thrown when the contract returns an AnswerIncorrect error for submit_answer.
- * Callers should catch this specifically to show a "Try Again" UI without reloading.
- */
-export class AnswerIncorrectError extends Error {
-  constructor() {
-    super("AnswerIncorrect: the submitted answer does not match.")
-    this.name = "AnswerIncorrectError"
-  }
-}
-
-const HUNT_FETCH_NETWORK_PATTERNS = [
-  /network( request)? (error|failed)/i,
-  /failed to fetch/i,
-  /fetch failed/i,
-  /request failed/i,
-  /rpc.*timed? out/i,
-  /timed? out/i,
-  /timeout/i,
-  /socket hang up/i,
-  /econn(reset|refused)/i,
-  /enotfound/i,
-  /ehostunreach/i,
-  /offline/i,
-]
-
-function normalizeHuntFetchError(error: unknown, fallbackMessage: string): Error {
-  const parsed = parseStellarError(error)
-  const errMessage =
-    error instanceof Error ? error.message : typeof error === "string" ? error : ""
-
-  const anyErr = error as
-    | {
-        response?: { status?: number }
-        status?: number
-      }
-    | undefined
-  const status = anyErr?.response?.status ?? anyErr?.status
-
-  if (
-    parsed.code === "TX_TIMEOUT" ||
-    status === 408 ||
-    status === 504 ||
-    HUNT_FETCH_NETWORK_PATTERNS.some((pattern) => pattern.test(errMessage))
-  ) {
-    return new Error("Network Error")
-  }
-
-  if (error instanceof Error) return error
-  return new Error(fallbackMessage)
-}
+// AnswerIncorrectError is re-exported from the central errors module for
+// backwards-compatible imports (e.g. `import { AnswerIncorrectError } from "@/lib/contracts/hunt"`).
+export { AnswerIncorrectError }
 
 // Soroban-friendly createHunt helper (testnet default).
 // This builds a small Stellar transaction (manageData) carrying the hunt
@@ -262,7 +214,7 @@ export async function get_hunt(huntId: number): Promise<HuntInfo> {
       emailNotifications: stored.emailNotifications,
     }
   } catch (error) {
-    throw normalizeHuntFetchError(error, "Failed to fetch hunt")
+    throw normalizeNetworkError(error, "Failed to fetch hunt")
   }
 }
 
@@ -294,7 +246,7 @@ export async function get_clue_info(huntId: number, clueId: number): Promise<Clu
       hintCost: clue.hintCost,
     }
   } catch (error) {
-    throw normalizeHuntFetchError(error, "Failed to fetch clue")
+    throw normalizeNetworkError(error, "Failed to fetch clue")
   }
 }
 

@@ -1,5 +1,5 @@
 import { toast } from "sonner"
-import { parseStellarError } from "@/lib/stellarErrors"
+import { mapContractError } from "@/lib/contracts/errors"
 
 // ─── Stage type ───────────────────────────────────────────────────────────────
 
@@ -85,13 +85,13 @@ export async function withTransactionToast<T>(
 
     return result
   } catch (err) {
-    const parsed = parseStellarError(err)
+    const mapped = mapContractError(err)
 
-    if (parsed.code === "WALLET_REJECTED") {
+    if (mapped.isUserRejection) {
       // Yellow warning — user intentionally cancelled, not an error.
-      toast.warning(parsed.message, { id: toastId })
+      toast.warning(mapped.message, { id: toastId })
     } else {
-      toast.error(parsed.message, { id: toastId })
+      toast.error(mapped.message, { id: toastId })
     }
 
     // Re-throw so callers can run their own cleanup (e.g. reset isPublishing).
