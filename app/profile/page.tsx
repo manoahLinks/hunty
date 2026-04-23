@@ -242,9 +242,9 @@ export default function UserProfilePage() {
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                    <StatPill label="NFT Rewards" value={summary.totalNftRewards} />
-                    <StatPill label="NFTs Claimed" value={summary.claimedNftRewards} />
-                    <StatPill label="NFTs Unclaimed" value={summary.unclaimedNftRewards} />
+                    <StatPill label="NFT Rewards" value={summary.totalNftRewards ?? 0} />
+                    <StatPill label="NFTs Claimed" value={summary.claimedNftRewards ?? 0} />
+                    <StatPill label="NFTs Unclaimed" value={summary.unclaimedNftRewards ?? 0} />
                   </div>
                   <div className="mt-4 text-sm text-slate-600">
                     Completion rate:{" "}

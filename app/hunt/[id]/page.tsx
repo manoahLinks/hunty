@@ -15,25 +15,60 @@ export async function generateMetadata({
   const { id } = await params;
   const hunt = await getHunt(id);
 
+  if (!hunt) {
+    return {
+      title: "Hunt Not Found | Hunty",
+      description: "The hunt you're looking for doesn't exist.",
+    };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
+  const huntUrl = `${baseUrl}/hunt/${hunt.id}`;
+  const ogImage = hunt.coverImageCid || `${baseUrl}/og-image.png`;
+
   return {
-    title: `${hunt?.title} | Hunt`,
-    description: hunt?.description,
-    keywords: ["hunt", `${hunt?.title}`],
+    title: `${hunt.title} | Hunty - Scavenger Hunt Game`,
+    description: hunt.description || `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn XLM tokens or exclusive NFTs!`,
+    keywords: ["hunt", hunt.title, "scavenger hunt", "game", "blockchain", "Stellar"],
+    authors: [{ name: "Hunty Team" }],
     openGraph: {
-      title: hunt?.title,
-      description: hunt?.description,
+      type: "website",
+      locale: "en_US",
+      url: huntUrl,
+      title: hunt.title,
+      description: hunt.description || `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
+      siteName: "Hunty",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: hunt.title,
+          type: "image/png",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
-      title: hunt?.title,
-      description: hunt?.description,
+      title: hunt.title,
+      description: hunt.description || `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
+      images: [ogImage],
+      creator: "@huntyapp",
     },
     robots: {
-      index: true,
+      index: hunt.status === "Active",
       follow: true,
-      googleBot: { index: true, follow: true, "max-image-preview": "large" },
+      googleBot: {
+        index: hunt.status === "Active",
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
     },
-    alternates: { canonical: `/hunt/${hunt?.id}` },
+    alternates: {
+      canonical: huntUrl,
+    },
   };
 }
 

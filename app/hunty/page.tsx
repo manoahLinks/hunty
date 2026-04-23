@@ -418,7 +418,7 @@ export default function CreateGame() {
                         onUpdateReward={updateReward}
                         onAddReward={addReward}
                         onDeleteReward={deleteReward}
-                        error={errors.rewardPool?.[0]}
+                        error={errors.rewards?.message}
                       />
 
                       <div className="flex justify-between">
@@ -461,9 +461,9 @@ export default function CreateGame() {
                             onChange={(e) => setGameName(e.target.value)}
                             className="w-[230px] [&::placeholder]:bg-gradient-to-r [&::placeholder]:from-[#3737A4] [&::placeholder]:to-[#0C0C4F] [&::placeholder]:bg-clip-text [&::placeholder]:text-transparent text-[16px]"
                           />
-                          {errors.title && (
+                          {errors.gameName && (
                             <span className="text-red-500 text-sm">
-                              {errors.title[0]}
+                              {errors.gameName.message}
                             </span>
                           )}
                         </div>
@@ -532,7 +532,7 @@ export default function CreateGame() {
                             />
                             {errors.startDate && (
                               <span className="text-red-500 text-sm">
-                                {errors.startDate[0]}
+                                {errors.startDate.message}
                               </span>
                             )}
                           </div>
@@ -551,7 +551,7 @@ export default function CreateGame() {
                             />
                             {errors.endDate && (
                               <span className="text-red-500 text-sm">
-                                {errors.endDate[0]}
+                                {errors.endDate.message}
                               </span>
                             )}
                           </div>

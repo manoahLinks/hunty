@@ -162,11 +162,13 @@ export function HuntDashboard({ hunts, onActivate, onRefresh, onSaveClues }: Hun
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setLeaderboardHunt(hunt)}
+                        asChild
                         className="border-[#3737A4] text-[#3737A4] hover:bg-[#3737A4] hover:text-white flex items-center gap-1.5"
                       >
-                        <Trophy className="w-4 h-4" />
-                        Leaderboard
+                        <Link href={`/dashboard/hunts/${hunt.id}/leaderboard`}>
+                          <Trophy className="w-4 h-4" />
+                          Leaderboard
+                        </Link>
                       </Button>
                     )}
                     {isDraft && (
