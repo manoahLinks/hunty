@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import confetti from "canvas-confetti";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,26 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
         await submitAnswer(huntId, Number(hunt.id), input);
         // ClueCompleted event received
         setSuccess(true);
+        
+        // Celebratory confetti (Requirement #146)
+        const isLastClue = currentIndex === totalHunts;
+        const isDifficultClue = (points ?? DEFAULT_POINTS) >= 20;
+        
+        if (isLastClue) {
+          confetti({
+            particleCount: 150,
+            spread: 100,
+            origin: { y: 0.6 },
+            colors: ["#3737A4", "#E3225C", "#39A437", "#FFD43E"]
+          });
+        } else if (isDifficultClue) {
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { y: 0.7 }
+          });
+        }
+
         setInput("");
         const actualPoints = Math.max(0, (points ?? DEFAULT_POINTS) - (hintRevealed ? (hunt.hintCost || 0) : 0));
         onScoreUpdate?.(actualPoints);
@@ -91,6 +112,25 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
       // Local fallback (test / preview mode — no wallet required)
       if (input.trim().toLowerCase() === (hunt.code || "").trim().toLowerCase()) {
         setSuccess(true);
+        
+        // Celebratory confetti for local/preview mode (Requirement #146)
+        const isLastClue = currentIndex === totalHunts;
+        const isDifficultClue = (points ?? DEFAULT_POINTS) >= 20;
+
+        if (isLastClue) {
+          confetti({
+            particleCount: 150,
+            spread: 100,
+            origin: { y: 0.6 }
+          });
+        } else if (isDifficultClue) {
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { y: 0.7 }
+          });
+        }
+
         setError("");
         setInput("");
         const actualPoints = Math.max(0, (points ?? DEFAULT_POINTS) - (hintRevealed ? (hunt.hintCost || 0) : 0));
