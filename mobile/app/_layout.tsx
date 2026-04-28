@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 import { BackHandler } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from './hooks/useFonts';
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -8,6 +13,15 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const router = useRouter();
+
+  const [loaded, error] = useFonts();
+
+
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
 
   useEffect(() => {
     const backAction = () => {
@@ -26,6 +40,10 @@ export default function RootLayout() {
     return () => backHandler.remove();
   }, [router]);
 
+  if (!loaded && !error) {
+    return null;
+  }
+
   return (
     <Stack
       screenOptions={{
@@ -35,8 +53,10 @@ export default function RootLayout() {
         headerTintColor: '#fff',
         headerTitleStyle: {
           fontWeight: 'bold',
+          fontFamily: 'HankenGrotesk-Bold',
         },
       }}
     />
   );
 }
+
