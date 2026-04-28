@@ -1,3 +1,5 @@
+import { getAddress, signTransaction as freighterSignTransaction } from "@stellar/freighter-api"
+
 export type WalletProvider = "freighter" | "albedo" | "rabet"
 
 const WALLET_SESSION_KEY = "stellar_wallet_session"
@@ -10,12 +12,6 @@ type WalletSession = {
 type WalletConnectResult = {
   publicKey?: string
   address?: string
-}
-
-type FreighterLike = {
-  getPublicKey?: () => Promise<string>
-  signTransaction?: (xdr: string) => Promise<string>
-  request?: (arg: { method: string; params?: { tx: string } }) => Promise<unknown>
 }
 
 type RabetLike = {
@@ -79,28 +75,17 @@ export function clearStoredWalletSession(): void {
   localStorage.removeItem(WALLET_SESSION_KEY)
 }
 
-async function getFreighterPublicKey(win: BrowserWithWallets): Promise<string> {
-  const wallet = win.freighter as FreighterLike | undefined
-  if (wallet?.getPublicKey) {
-    return wallet.getPublicKey()
-  }
-  if (wallet?.request) {
-    const value = await wallet.request({ method: "getPublicKey" })
-    if (typeof value === "string") return value
-  }
-  throw new Error("Freighter wallet not available")
+async function getFreighterPublicKey(): Promise<string> {
+  const { address, error } = await getAddress()
+  if (error) throw new Error(error)
+  if (!address) throw new Error("Freighter wallet not available")
+  return address
 }
 
-async function signWithFreighter(win: BrowserWithWallets, xdr: string): Promise<string> {
-  const wallet = win.freighter as FreighterLike | undefined
-  if (wallet?.signTransaction) {
-    return wallet.signTransaction(xdr)
-  }
-  if (wallet?.request) {
-    const value = await wallet.request({ method: "signTransaction", params: { tx: xdr } })
-    if (typeof value === "string") return value
-  }
-  throw new Error("Freighter cannot sign transaction")
+async function signWithFreighter(xdr: string): Promise<string> {
+  const signedXdr = await freighterSignTransaction(xdr)
+  if (!signedXdr) throw new Error("Freighter cannot sign transaction")
+  return signedXdr
 }
 
 async function getRabetPublicKey(win: BrowserWithWallets): Promise<string> {
@@ -148,7 +133,7 @@ async function signWithAlbedo(win: BrowserWithWallets, xdr: string): Promise<str
 export async function connectWalletProvider(provider: WalletProvider): Promise<string> {
   if (typeof window === "undefined") throw new Error("Browser environment required")
   const win = window as BrowserWithWallets
-  if (provider === "freighter") return getFreighterPublicKey(win)
+  if (provider === "freighter") return getFreighterPublicKey()
   if (provider === "rabet") return getRabetPublicKey(win)
   return getAlbedoPublicKey(win)
 }
@@ -176,7 +161,7 @@ export function getActiveWalletAdapter(): ActiveWalletAdapter {
 
   return {
     provider: "freighter",
-    getPublicKey: () => getFreighterPublicKey(win),
-    signTransaction: (xdr) => signWithFreighter(win, xdr),
+    getPublicKey: () => getFreighterPublicKey(),
+    signTransaction: (xdr) => signWithFreighter(xdr),
   }
 }

@@ -1,6 +1,6 @@
 import Server, { TransactionBuilder, Operation } from "@stellar/stellar-sdk"
 import { getHunt as getStoredHunt, getHuntClues } from "@/lib/huntStore"
-import { parseStellarError } from "@/lib/stellarErrors"
+import { normalizeNetworkError, AnswerIncorrectError } from "./errors"
 import { SOROBAN_RPC_URL, NETWORK_PASSPHRASE } from "./config"
 import { getActiveWalletAdapter } from "@/lib/walletAdapter"
 

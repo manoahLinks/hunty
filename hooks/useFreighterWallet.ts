@@ -135,6 +135,7 @@ export function useFreighterWallet(): UseFreighterWalletReturn {
             setPublicKey(address);
             setConnected(true);
             localStorage.setItem(STORAGE_KEY, address);
+            setStoredWalletSession("freighter", address);
           } else {
             // Empty address = user locked or disconnected Freighter
             setPublicKey("");
