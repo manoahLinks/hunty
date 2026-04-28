@@ -1,0 +1,13 @@
+{
+  "extends": "expo-router/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@lib/*": ["../lib/*"],
+      "@store/*": ["./store/*"],
+      "@providers/*": ["./providers/*"]
+    }
+  }
+}

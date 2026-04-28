@@ -2,6 +2,9 @@ import { useEffect } from 'react';
 import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, type ErrorBoundaryProps, useRouter } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import ReactQueryProvider from '../providers/ReactQueryProvider';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -28,7 +31,6 @@ export default function RootLayout() {
 
   const [loaded, error] = useFonts();
 
-
   useEffect(() => {
     if (loaded || error) {
       SplashScreen.hideAsync();
@@ -54,22 +56,24 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
-        <Stack
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: '#f4511e',
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
-            contentStyle: styles.content,
-          }}
-        />
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <ReactQueryProvider>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
+          <Stack
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: '#f4511e',
+              },
+              headerTintColor: '#fff',
+              headerTitleStyle: {
+                fontWeight: 'bold',
+              },
+              contentStyle: styles.content,
+            }}
+          />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </ReactQueryProvider>
   );
 }
 
