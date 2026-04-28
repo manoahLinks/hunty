@@ -26,6 +26,15 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 export default function RootLayout() {
   const router = useRouter();
 
+  const [loaded, error] = useFonts();
+
+
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
+
   useEffect(() => {
     const backAction = () => {
       if (router.canGoBack()) {
@@ -39,6 +48,10 @@ export default function RootLayout() {
 
     return () => backHandler.remove();
   }, [router]);
+
+  if (!loaded && !error) {
+    return null;
+  }
 
   return (
     <SafeAreaProvider>
