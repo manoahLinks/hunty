@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
+import { StackHeader } from '@components/navigation/StackHeader';
 
 export default function TabLayout() {
   const { colors, isDark } = useTheme();
@@ -7,14 +8,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: {
-          backgroundColor: colors.primary,
-        },
+        header: (props) => <StackHeader {...props} />,
         headerTintColor: '#ffffff',
-        headerTitleStyle: {
-          fontWeight: '700',
-          color: '#ffffff',
-        },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: isDark ? '#9ca3af' : '#6b7280',
         tabBarStyle: {

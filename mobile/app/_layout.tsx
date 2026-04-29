@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font';
 import { hideSplashScreen } from '@utils/splashScreenManager';
 import { useTheme } from '@providers/ThemeProvider';
 import { ThemedCustomText, ThemedButton } from '@components/themed';
+import { StackHeader } from '@components/navigation/StackHeader';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -72,14 +73,8 @@ export default function RootLayout() {
       >
         <Stack
           screenOptions={{
-            headerStyle: {
-              backgroundColor: colors.primary,
-            },
+            header: (props) => <StackHeader {...props} />,
             headerTintColor: '#ffffff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-              color: '#ffffff',
-            },
             contentStyle: { backgroundColor: colors.background },
             statusBarStyle: isDark ? 'light' : 'dark',
           }}
