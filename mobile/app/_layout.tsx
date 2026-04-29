@@ -8,7 +8,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { ThemedCustomText, ThemedButton } from '@components/themed';
 
 export const unstable_settings = {
-  initialRouteName: 'index',
+  initialRouteName: '(tabs)',
 };
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -83,7 +83,11 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: colors.background },
             statusBarStyle: isDark ? 'light' : 'dark',
           }}
-        />
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="details" options={{ title: 'Details' }} />
+          <Stack.Screen name="nested" options={{ title: 'Nested' }} />
+        </Stack>
       </SafeAreaView>
     </SafeAreaProvider>
   );
