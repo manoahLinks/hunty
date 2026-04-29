@@ -5,11 +5,13 @@ import ReactQueryProvider from './providers/ReactQueryProvider';
 import { ThemeProvider } from './providers/ThemeProvider';
 import { initializeSplashScreen } from './utils/splashScreenManager';
 import RootLayout from './app/_layout';
+import { initializeSentry, Sentry } from './config/sentry';
 
 // Initialize splash screen on app start
 initializeSplashScreen();
+initializeSentry();
 
-export default function App() {
+function App() {
   return (
     <ReactQueryProvider>
       <ThemeProvider>
@@ -21,3 +23,5 @@ export default function App() {
     </ReactQueryProvider>
   );
 }
+
+export default Sentry.wrap(App);

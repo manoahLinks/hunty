@@ -7,12 +7,17 @@ import { hideSplashScreen } from '@utils/splashScreenManager';
 import { useTheme } from '@providers/ThemeProvider';
 import { ThemedCustomText, ThemedButton } from '@components/themed';
 import { StackHeader } from '@components/navigation/StackHeader';
+import { Sentry } from '@config/sentry';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    Sentry.Native.captureException(error);
+  }, [error]);
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
